@@ -1,0 +1,8 @@
+[package]
+name = "rust_2d_game"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+macroquad = "0.3.16"
+image = "0.24.2"
