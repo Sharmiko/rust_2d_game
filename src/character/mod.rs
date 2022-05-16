@@ -1,17 +1,24 @@
-use std::cmp;
+use std::cell::{RefCell, RefMut};
+use std::rc::Rc;
 
 use crate::consts::{CHAR_DIRECTORY, CHAR_WIDTH, RUN_SPEED};
 
 use macroquad::input;
 use macroquad::prelude::*;
-use std::{thread, time::Duration};
-use macroquad::experimental::coroutines::wait_seconds;
+
+
+type Action = RefCell<MultiStageAnimation>;
+
+
+pub trait PerformAction {
+    fn perform_action(&self, action: RefMut<'_, MultiStageAnimation>) -> (Texture2D, DrawTextureParams);
+}
+
 
 pub struct Animation {
     texture: Texture2D,
     index: i8
 }
-
 
 impl Animation {
 
@@ -20,23 +27,6 @@ impl Animation {
             texture: load_texture(animation_path).await.unwrap(),
             index: 0
         }
-    }
-
-    fn one_cycle(&mut self) -> Vec<Rect> {
-        let mut res: Vec<Rect> = vec![];
-        let mut index = 0;
-        while index as f32 != self.texture.width() / CHAR_WIDTH {
-            let rect: Rect = Rect {
-                x: index as f32 * CHAR_WIDTH,
-                y: 0.,
-                w: CHAR_WIDTH,
-                h: CHAR_WIDTH
-            };
-            res.push(rect);
-            index += 1;
-        }
-
-        return res;
     }
 
     fn next(&mut self) -> Rect {
@@ -56,6 +46,20 @@ impl Animation {
     }
 }
 
+pub struct MultiStageAnimation {
+    animation: Animation,
+    performing: bool
+}
+
+impl MultiStageAnimation {
+    async fn new(animation_path: &str) -> Action {
+        RefCell::new(Self {
+            animation: Animation::new(animation_path).await,
+            performing: false
+        })
+    }
+}
+
 
 struct Location {
     x: f32,
@@ -72,15 +76,50 @@ impl Location {
 }
 
 
+struct CharacterState {
+    is_flipped: bool
+}
+
+impl CharacterState {
+    fn default() -> Self {
+        Self {
+            is_flipped: false
+        }
+    }
+}
+
+
 pub struct Character {
     name: String,
     health: i8,
     idle: Animation,
     run: Animation,
-    jump: Animation,
+    jump: Action,
+    double_jump: Action,
+    attack: Action,
+    kick: Action,
     location: Location,
-    is_fliped: bool,
-    jumping: bool
+    state: CharacterState
+}
+
+
+impl PerformAction for Character {
+    fn perform_action(&self, mut action: RefMut<'_, MultiStageAnimation>) -> (Texture2D, DrawTextureParams) {
+        if !action.performing {
+            action.performing = true;
+        } else {
+            if action.animation.index as f32  + 1. == action.animation.texture.width() / CHAR_WIDTH {
+                action.performing = false;
+            }
+        }
+
+        let texture: Texture2D = action.animation.texture;
+        let mut draw_params: DrawTextureParams = DrawTextureParams::default();
+        draw_params.source = Some(action.animation.next());
+        draw_params.flip_x = self.state.is_flipped;
+
+        return (texture, draw_params);
+    }
 }
 
 
@@ -115,8 +154,8 @@ impl Character {
         let mut draw_params: DrawTextureParams = DrawTextureParams::default();
         draw_params.source = Some(self.run.next());
 
-        if self.is_fliped {
-            self.is_fliped = false;
+        if self.state.is_flipped {
+            self.state.is_flipped = false;
             self.location.x += CHAR_WIDTH / 2.;
         }
 
@@ -136,8 +175,8 @@ impl Character {
         draw_params.flip_x = true;
         draw_params.source = Some(self.run.next());
 
-        if !self.is_fliped {
-            self.is_fliped = true;
+        if !self.state.is_flipped {
+            self.state.is_flipped = true;
             self.location.x -= CHAR_WIDTH / 2.;
         }
 
@@ -155,39 +194,49 @@ impl Character {
         let texture: Texture2D = self.idle.texture;
         let mut draw_params: DrawTextureParams = DrawTextureParams::default();
         draw_params.source = Some(self.idle.next());
-        draw_params.flip_x = self.is_fliped;
+        draw_params.flip_x = self.state.is_flipped;
 
         return (texture, draw_params);
     }
 
     fn perform_jump(&mut self) -> (Texture2D, DrawTextureParams) {
-        if !self.jumping {
-            self.jumping = true;
-        } else {
-            if self.jump.index as f32  + 1. == self.jump.texture.width() / CHAR_WIDTH {
-                self.jumping = false;
-            }
-        }
-        let texture: Texture2D = self.jump.texture;
-        let mut draw_params: DrawTextureParams = DrawTextureParams::default();
-        draw_params.source = Some(self.jump.next());
-        draw_params.flip_x = self.is_fliped;
-
-        return (texture, draw_params);
+        self.perform_action(self.jump.borrow_mut())
     }
 
+    fn perform_double_jump(&mut self) -> (Texture2D, DrawTextureParams) {
+        self.jump.borrow_mut().performing = false;
+        self.perform_action(self.double_jump.borrow_mut())
+    }
+
+    fn attack(&mut self) -> (Texture2D, DrawTextureParams) {
+        self.perform_action(self.attack.borrow_mut())
+    }
+
+    fn kick(&mut self) -> (Texture2D, DrawTextureParams) {
+        self.perform_action(self.kick.borrow_mut())
+    }
 
     pub async fn update(&mut self) -> () {
         let current_texture: Texture2D;
         let draw_params: DrawTextureParams;
 
-        if self.jumping || input::is_key_pressed(input::KeyCode::Space) {
-            (current_texture, draw_params) = self.perform_jump();
+        if self.attack.borrow().performing || input::is_key_pressed(input::KeyCode::F) {
+            (current_texture, draw_params) = self.attack();
+        } else if self.kick.borrow().performing || input::is_key_pressed(input::KeyCode::V) {
+            (current_texture, draw_params) = self.kick();
+        } else if self.double_jump.borrow().performing {
+            (current_texture, draw_params) = self.perform_double_jump();
+        } else if self.jump.borrow().performing || input::is_key_pressed(input::KeyCode::Space) {
+            if self.jump.borrow().performing && input::is_key_pressed(input::KeyCode::Space) {
+                (current_texture, draw_params) = self.perform_double_jump();
+            } else {
+                (current_texture, draw_params) = self.perform_jump();
+            }
         } else if input::is_key_down(input::KeyCode::A) {
             (current_texture, draw_params) = self.run_left();   
         } else if input::is_key_down(input::KeyCode::D) {
             (current_texture, draw_params) = self.run_right();
-        }  else {
+        } else {
             (current_texture, draw_params) = self.idle();
         }
 
@@ -205,10 +254,12 @@ impl Punk {
             health: 10,
             idle: Animation::new(&format!("{}/punk/Punk_idle.png", CHAR_DIRECTORY)).await,
             run: Animation::new(&format!("{}/punk/Punk_run.png", CHAR_DIRECTORY)).await,
-            jump: Animation::new(&format!("{}/punk/Punk_jump.png", CHAR_DIRECTORY)).await,
+            jump: MultiStageAnimation::new(&format!("{}/punk/Punk_jump.png", CHAR_DIRECTORY)).await,
+            double_jump: MultiStageAnimation::new(&format!("{}/punk/Punk_doublejump.png", CHAR_DIRECTORY)).await,
+            attack: MultiStageAnimation::new(&format!("{}/punk/Punk_attack1.png", CHAR_DIRECTORY)).await,
+            kick: MultiStageAnimation::new(&format!("{}/punk/Punk_punch.png", CHAR_DIRECTORY)).await,
             location: Location::default(),
-            is_fliped: false,
-            jumping: false
+            state: CharacterState::default()
         }
     }
 }
