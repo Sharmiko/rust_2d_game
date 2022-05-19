@@ -4,5 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-macroquad = "0.3.16"
+ggez = "0.7"
+mint = "0.5.8"
 image = "0.24.2"
+glam = "0.20.5"
