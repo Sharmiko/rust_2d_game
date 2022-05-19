@@ -1,87 +1,56 @@
-use std::cell::{RefCell, RefMut};
-use std::rc::Rc;
+use std::path::Path;
 
-use crate::consts::{CHAR_DIRECTORY, CHAR_WIDTH, RUN_SPEED};
+use ggez::{Context, GameResult};
+use ggez::event::{EventHandler, KeyCode};
+use ggez::input::keyboard;
+use ggez::graphics::{self, *};
 
-use macroquad::input;
-use macroquad::prelude::*;
+use glam::Vec2;
 
-
-type Action = RefCell<MultiStageAnimation>;
-
-
-pub trait PerformAction {
-    fn perform_action(&self, action: RefMut<'_, MultiStageAnimation>) -> (Texture2D, DrawTextureParams);
-}
+use crate::consts::{CHAR_WIDTH};
 
 
 pub struct Animation {
-    texture: Texture2D,
-    index: i8
+    image: Image,
+    current: i8,
+    total: i8,
+    width: f32
 }
+
 
 impl Animation {
 
-    async fn new(animation_path: &str) -> Self {
+    pub fn new(ctx: &mut Context, image_path: &str) -> Self {
+        let image = graphics::Image::new(ctx, Path::new(image_path)).unwrap();
+        let total = (image.width() / image.height()) as i8;
         Self {
-            texture: load_texture(animation_path).await.unwrap(),
-            index: 0
+            image: image,
+            current: 0,
+            total: total,
+            width: 1. / total as f32,
         }
     }
 
-    fn next(&mut self) -> Rect {
-        if self.index as f32 == self.texture.width() / CHAR_WIDTH {
-            self.index = 0;
+    fn next_x(&mut self) -> f32 {
+        if self.current == self.total {
+            self.current = 0;
         }
-        let rect: Rect = Rect {
-            x: self.index as f32 * CHAR_WIDTH,
-            y: 0.,
-            w: CHAR_WIDTH,
-            h: CHAR_WIDTH
-        };
 
-        self.index += 1;
+        let x = 1. - ((self.total as f32 - self.current as f32) / self.total as f32);
 
-        return rect;
-    }
-}
+        self.current += 1;
 
-pub struct MultiStageAnimation {
-    animation: Animation,
-    performing: bool
-}
-
-impl MultiStageAnimation {
-    async fn new(animation_path: &str) -> Action {
-        RefCell::new(Self {
-            animation: Animation::new(animation_path).await,
-            performing: false
-        })
+        return x;
     }
 }
 
 
-struct Location {
-    x: f32,
-    y: f32
-}
-
-impl Location {
-    fn default() -> Self {
-        Self {
-            x: screen_width() / 2. - CHAR_WIDTH / 2.,
-            y: screen_height() / 2. - CHAR_WIDTH / 2.
-        }
-    }
-}
-
-
-struct CharacterState {
+pub struct CharacterState {
     is_flipped: bool
 }
 
 impl CharacterState {
-    fn default() -> Self {
+    pub fn default() -> Self {
         Self {
             is_flipped: false
         }
@@ -90,175 +59,83 @@ impl CharacterState {
 
 
 pub struct Character {
-    name: String,
-    health: i8,
-    idle: Animation,
-    run: Animation,
-    jump: Action,
-    double_jump: Action,
-    attack: Action,
-    kick: Action,
-    location: Location,
+    pub default: Animation,
+    pub run: Animation,
+    x: f32,
+    y: f32,
     state: CharacterState
 }
 
-
-impl PerformAction for Character {
-    fn perform_action(&self, mut action: RefMut<'_, MultiStageAnimation>) -> (Texture2D, DrawTextureParams) {
-        if !action.performing {
-            action.performing = true;
-        } else {
-            if action.animation.index as f32  + 1. == action.animation.texture.width() / CHAR_WIDTH {
-                action.performing = false;
-            }
-        }
-
-        let texture: Texture2D = action.animation.texture;
-        let mut draw_params: DrawTextureParams = DrawTextureParams::default();
-        draw_params.source = Some(action.animation.next());
-        draw_params.flip_x = self.state.is_flipped;
-
-        return (texture, draw_params);
-    }
-}
-
-
 impl Character {
 
-    fn draw_char(&mut self, texture: Texture2D, draw_params: DrawTextureParams) {
-        clear_background(LIGHTGRAY);
-
-        let x: f32 = if self.location.x + CHAR_WIDTH / 2. <= screen_width() {
-            self.location.x
-        } else {
-            screen_width() - CHAR_WIDTH / 2.
-        };
-
-        let y: f32 = if self.location.y <= screen_height() {
-            self.location.y
-        } else {
-            screen_height()
-        };
-
-        draw_texture_ex(
-            texture,
-            x,
-            y,
-            WHITE,
-            draw_params
-        );
-    }
-
-    fn run_right(&mut self) -> (Texture2D, DrawTextureParams) {
-        let texture: Texture2D = self.run.texture;
-        let mut draw_params: DrawTextureParams = DrawTextureParams::default();
-        draw_params.source = Some(self.run.next());
+    pub fn param(&self, src_x: f32, src_y: f32, w: f32, h: f32) -> graphics::DrawParam{
+        let mut params = graphics::DrawParam::default()
+            .src(graphics::Rect {
+                x: src_x,
+                y: src_y,
+                w: w,
+                h: h
+            })
+            .dest(Vec2::new(self.x, self.y));
 
         if self.state.is_flipped {
-            self.state.is_flipped = false;
-            self.location.x += CHAR_WIDTH / 2.;
+            params = params.scale(Vec2::new(-1f32, 1f32));
         }
 
-        self.location.x += RUN_SPEED;
-        self.location.x = if self.location.x + CHAR_WIDTH / 2. <= screen_width() {
-            self.location.x
-        } else {
-            screen_width() - CHAR_WIDTH / 2.
-        };
-
-        return (texture, draw_params);
+        return params;
     }
 
-    fn run_left(&mut self) -> (Texture2D, DrawTextureParams) {
-        let texture: Texture2D = self.run.texture;
-        let mut draw_params: DrawTextureParams = DrawTextureParams::default();
-        draw_params.flip_x = true;
-        draw_params.source = Some(self.run.next());
+    pub fn update(&mut self, _ctx: &mut Context) -> GameResult<()> {
+        Ok(())
+    }
 
+    fn run_right(&mut self, ctx: &mut Context) {
+        let src_x = self.run.next_x();
+        let params = self.param(src_x, 0f32, self.run.width, 1.);
+        if self.state.is_flipped {
+            self.state.is_flipped = false;
+            self.x -= CHAR_WIDTH / 2.;
+        }
+        self.run.image.draw(ctx, params);
+    }
+
+    fn run_left(&mut self, ctx: &mut Context) {
+        let src_x = self.run.next_x();
+        let params = self.param(src_x, 0f32, self.run.width, 1.);
         if !self.state.is_flipped {
             self.state.is_flipped = true;
-            self.location.x -= CHAR_WIDTH / 2.;
+            self.x += CHAR_WIDTH / 2.;
         }
+        self.run.image.draw(ctx, params);
+    }
 
-        self.location.x -= RUN_SPEED;
-        self.location.x = if self.location.x + CHAR_WIDTH / 2. >= 0. {
-            self.location.x
+    fn idle(&mut self, ctx: &mut Context) {
+        let src_x = self.default.next_x();
+        let params = self.param(src_x, 0f32, self.default.width, 1.);
+        self.default.image.draw(ctx, params);
+    }
+
+    pub fn draw(&mut self, ctx: &mut Context)  {
+        if keyboard::is_key_pressed(ctx, KeyCode::D) {
+            self.run_right(ctx);
+        } else if keyboard::is_key_pressed(ctx, KeyCode::A) {
+            self.run_left(ctx);
         } else {
-            - CHAR_WIDTH / 2.
-        };
-
-        return (texture, draw_params);
-    }
-
-    fn idle(&mut self) -> (Texture2D, DrawTextureParams) {
-        let texture: Texture2D = self.idle.texture;
-        let mut draw_params: DrawTextureParams = DrawTextureParams::default();
-        draw_params.source = Some(self.idle.next());
-        draw_params.flip_x = self.state.is_flipped;
-
-        return (texture, draw_params);
-    }
-
-    fn perform_jump(&mut self) -> (Texture2D, DrawTextureParams) {
-        self.perform_action(self.jump.borrow_mut())
-    }
-
-    fn perform_double_jump(&mut self) -> (Texture2D, DrawTextureParams) {
-        self.jump.borrow_mut().performing = false;
-        self.perform_action(self.double_jump.borrow_mut())
-    }
-
-    fn attack(&mut self) -> (Texture2D, DrawTextureParams) {
-        self.perform_action(self.attack.borrow_mut())
-    }
-
-    fn kick(&mut self) -> (Texture2D, DrawTextureParams) {
-        self.perform_action(self.kick.borrow_mut())
-    }
-
-    pub async fn update(&mut self) -> () {
-        let current_texture: Texture2D;
-        let draw_params: DrawTextureParams;
-
-        if self.attack.borrow().performing || input::is_key_pressed(input::KeyCode::F) {
-            (current_texture, draw_params) = self.attack();
-        } else if self.kick.borrow().performing || input::is_key_pressed(input::KeyCode::V) {
-            (current_texture, draw_params) = self.kick();
-        } else if self.double_jump.borrow().performing {
-            (current_texture, draw_params) = self.perform_double_jump();
-        } else if self.jump.borrow().performing || input::is_key_pressed(input::KeyCode::Space) {
-            if self.jump.borrow().performing && input::is_key_pressed(input::KeyCode::Space) {
-                (current_texture, draw_params) = self.perform_double_jump();
-            } else {
-                (current_texture, draw_params) = self.perform_jump();
-            }
-        } else if input::is_key_down(input::KeyCode::A) {
-            (current_texture, draw_params) = self.run_left();   
-        } else if input::is_key_down(input::KeyCode::D) {
-            (current_texture, draw_params) = self.run_right();
-        } else {
-            (current_texture, draw_params) = self.idle();
+            self.idle(ctx);
         }
-
-        self.draw_char(current_texture, draw_params);
     }
 }
-        
+
 
 pub struct Punk;
 
 impl Punk {
-    pub async fn new() -> Character {
+    pub fn new(_ctx: &mut Context) -> Character {
         Character {
-            name: "Punk".to_string(),
-            health: 10,
-            idle: Animation::new(&format!("{}/punk/Punk_idle.png", CHAR_DIRECTORY)).await,
-            run: Animation::new(&format!("{}/punk/Punk_run.png", CHAR_DIRECTORY)).await,
-            jump: MultiStageAnimation::new(&format!("{}/punk/Punk_jump.png", CHAR_DIRECTORY)).await,
-            double_jump: MultiStageAnimation::new(&format!("{}/punk/Punk_doublejump.png", CHAR_DIRECTORY)).await,
-            attack: MultiStageAnimation::new(&format!("{}/punk/Punk_attack1.png", CHAR_DIRECTORY)).await,
-            kick: MultiStageAnimation::new(&format!("{}/punk/Punk_punch.png", CHAR_DIRECTORY)).await,
-            location: Location::default(),
+            default: Animation::new(_ctx, "/Punk_idle.png"),
+            run: Animation::new(_ctx, "/Punk_run.png"),
+            x: 100.,
+            y: 100.,
             state: CharacterState::default()
         }
     }
