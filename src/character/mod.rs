@@ -1,5 +1,6 @@
 use std::path::Path;
 use std::cell::{RefCell, RefMut};
+use std::collections::HashMap;
 
 use ggez::{Context, GameResult};
 use ggez::event::KeyCode;
@@ -11,29 +12,12 @@ use glam::Vec2;
 use crate::consts::{CHAR_WIDTH, RUN_SPEED};
 
 
-type Action = RefCell<MultiStageAnimation>;
-
-
-pub struct MultiStageAnimation {
-    animation: Animation,
-    performing: bool
-}
-
-impl MultiStageAnimation {
-    pub fn new(ctx: &mut Context, image_path: &str) -> Action {
-        RefCell::new(Self {
-            animation: Animation::new(ctx, image_path),
-            performing: false
-        })
-    }
-} 
-
-
 pub struct Animation {
     image: Image,
     current: i8,
     total: i8,
-    width: f32
+    width: f32,
+    performing: bool
 }
 
 
@@ -47,6 +31,7 @@ impl Animation {
             current: 0,
             total: total,
             width: 1. / total as f32,
+            performing: false
         }
     }
 
@@ -77,27 +62,40 @@ impl CharacterState {
 }
 
 
-pub struct Character {
-    pub default: Animation,
-    pub run: Animation,
-    pub jump: Action,
+pub struct Location {
     x: f32,
     y: f32,
-    state: CharacterState
+    src_x: f32,
+    flip: f32
+}
+
+impl Location {
+    pub fn default() -> Self {
+        Self {
+            x: 100.,
+            y: 100.,
+            src_x: 0.,
+            flip: 1f32
+        }
+    }
+}
+
+
+pub struct Character {
+    animations: HashMap<String, RefCell<Animation>>,
+    location: Location,
+    state: CharacterState,
+    current: String
 }
 
 impl Character {
 
-    pub fn perform_action(&self, ctx: &mut Context, mut action: RefMut<'_, MultiStageAnimation>) {
+    pub fn perform_action(&self, mut action: RefMut<'_, Animation>) {
         if !action.performing {
             action.performing = true;
-        } else if action.animation.current + 1 == action.animation.total {
+        } else if action.current + 1 == action.total {
             action.performing = false;
         }
-
-        let src_x = action.animation.next_x();
-        let params = self.param(src_x, 0f32, action.animation.width, 1.);
-        action.animation.image.draw(ctx, params).unwrap();
     }
 
     pub fn param(&self, src_x: f32, src_y: f32, w: f32, h: f32) -> graphics::DrawParam{
@@ -108,7 +106,7 @@ impl Character {
                 w: w,
                 h: h
             })
-            .dest(Vec2::new(self.x, self.y));
+            .dest(Vec2::new(self.location.x, self.location.y));
 
         if self.state.is_flipped {
             params = params.scale(Vec2::new(-1f32, 1f32));
@@ -117,67 +115,75 @@ impl Character {
         return params;
     }
 
-    pub fn update(&mut self, _ctx: &mut Context) -> GameResult<()> {
-        Ok(())
-    }
-
-    fn run_right(&mut self, ctx: &mut Context) {
-        let src_x = self.run.next_x();
-        let params = self.param(src_x, 0f32, self.run.width, 1.);
+    fn run_right(&mut self, _ctx: &mut Context) {
+        let mut current_anim = self.animations.get("run").unwrap().borrow_mut();
+        self.location.src_x = current_anim.next_x();
         if self.state.is_flipped {
             self.state.is_flipped = false;
-            self.x -= CHAR_WIDTH / 2.;
+            self.location.x -= CHAR_WIDTH / 2.;
         }
 
-        self.x += RUN_SPEED;
-        let (width, _) = graphics::size(ctx);
-        self.x = if self.x + CHAR_WIDTH / 2. <= width {
-            self.x
+        self.location.x += RUN_SPEED;
+        let (width, _) = graphics::size(_ctx);
+        self.location.x = if self.location.x + CHAR_WIDTH / 2. <= width {
+            self.location.x
         } else {
             width - CHAR_WIDTH / 2.
         };
 
-        self.run.image.draw(ctx, params).unwrap();
+        self.current = "run".to_string();
     }
 
-    fn run_left(&mut self, ctx: &mut Context) {
-        let src_x = self.run.next_x();
-        let params = self.param(src_x, 0f32, self.run.width, 1.);
+    fn run_left(&mut self, _ctx: &mut Context) {
+        let mut current_anim = self.animations.get("run").unwrap().borrow_mut();
+        self.location.src_x = current_anim.next_x();
         if !self.state.is_flipped {
             self.state.is_flipped = true;
-            self.x += CHAR_WIDTH / 2.;
+            self.location.x += CHAR_WIDTH / 2.;
         }
 
-        self.x -= RUN_SPEED;
-        self.x = if self.x - CHAR_WIDTH / 2. >= 0. {
-            self.x
+        self.location.x -= RUN_SPEED;
+        self.location.x = if self.location.x - CHAR_WIDTH / 2. >= 0. {
+            self.location.x
         } else {
             CHAR_WIDTH / 2.
         };
 
-        self.run.image.draw(ctx, params).unwrap();
+        self.current = "run".to_string();
     }
 
-    fn idle(&mut self, ctx: &mut Context) {
-        let src_x = self.default.next_x();
-        let params = self.param(src_x, 0f32, self.default.width, 1.);
-        self.default.image.draw(ctx, params);
+    fn idle(&mut self, _ctx: &mut Context) {
+        let mut idle_anim = self.animations.get("idle").unwrap().borrow_mut();
+        self.location.src_x = idle_anim.next_x();
+        self.current = "idle".to_string();
     }
 
-    fn perform_jump(&mut self, ctx: &mut Context) {
-        self.perform_action(ctx, self.jump.borrow_mut());
+    fn perform_jump(&mut self, _ctx: &mut Context) {
+        self.current = "jump".to_string();
+        let mut current_anim = self.animations.get("jump").unwrap().borrow_mut();
+        self.location.src_x = current_anim.next_x();
+        self.perform_action(current_anim);
+    }
+
+    pub fn update(&mut self, _ctx: &mut Context) -> GameResult<()> {
+        let jumping: bool = self.animations.get("jump").unwrap().borrow_mut().performing;
+        if jumping || keyboard::is_key_pressed(_ctx, KeyCode::Space) {
+            self.perform_jump(_ctx);
+        } else if keyboard::is_key_pressed(_ctx, KeyCode::D) {
+            self.run_right(_ctx);
+        } else if keyboard::is_key_pressed(_ctx, KeyCode::A) {
+            self.run_left(_ctx);
+        } else {
+            self.idle(_ctx);
+        }
+
+        Ok(())
     }
 
     pub fn draw(&mut self, ctx: &mut Context)  {
-        if self.jump.borrow_mut().performing || keyboard::is_key_pressed(ctx, KeyCode::Space) {
-            self.perform_jump(ctx);
-        } else if keyboard::is_key_pressed(ctx, KeyCode::D) {
-            self.run_right(ctx);
-        } else if keyboard::is_key_pressed(ctx, KeyCode::A) {
-            self.run_left(ctx);
-        } else {
-            self.idle(ctx);
-        }
+        let current_anim = self.animations.get(&self.current).unwrap().borrow_mut();
+        let params = self.param(self.location.src_x, 0f32, current_anim.width, self.location.flip);
+        current_anim.image.draw(ctx, params).unwrap();
     }
 }
 
@@ -186,13 +192,15 @@ pub struct Punk;
 
 impl Punk {
     pub fn new(_ctx: &mut Context) -> Character {
+        let mut animations = HashMap::new();
+        animations.insert("idle".to_string(), RefCell::new(Animation::new(_ctx, "/Punk_idle.png")));
+        animations.insert("run".to_string(), RefCell::new(Animation::new(_ctx, "/Punk_run.png")));
+        animations.insert("jump".to_string(), RefCell::new(Animation::new(_ctx, "/Punk_jump.png")));
         Character {
-            default: Animation::new(_ctx, "/Punk_idle.png"),
-            run: Animation::new(_ctx, "/Punk_run.png"),
-            jump: MultiStageAnimation::new(_ctx, "/Punk_jump.png"),
-            x: 100.,
-            y: 100.,
-            state: CharacterState::default()
+            animations: animations,
+            location: Location::default(),
+            state: CharacterState::default(),
+            current: "idle".to_string()
         }
     }
 }
