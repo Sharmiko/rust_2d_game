@@ -2,7 +2,7 @@ use std::path::Path;
 use std::cell::{RefCell, RefMut};
 
 use ggez::{Context, GameResult};
-use ggez::event::{EventHandler, KeyCode};
+use ggez::event::KeyCode;
 use ggez::input::keyboard;
 use ggez::graphics::{self, *};
 
@@ -97,7 +97,7 @@ impl Character {
 
         let src_x = action.animation.next_x();
         let params = self.param(src_x, 0f32, action.animation.width, 1.);
-        action.animation.image.draw(ctx, params);
+        action.animation.image.draw(ctx, params).unwrap();
     }
 
     pub fn param(&self, src_x: f32, src_y: f32, w: f32, h: f32) -> graphics::DrawParam{
@@ -137,7 +137,7 @@ impl Character {
             width - CHAR_WIDTH / 2.
         };
 
-        self.run.image.draw(ctx, params);
+        self.run.image.draw(ctx, params).unwrap();
     }
 
     fn run_left(&mut self, ctx: &mut Context) {
@@ -155,7 +155,7 @@ impl Character {
             CHAR_WIDTH / 2.
         };
 
-        self.run.image.draw(ctx, params);
+        self.run.image.draw(ctx, params).unwrap();
     }
 
     fn idle(&mut self, ctx: &mut Context) {
