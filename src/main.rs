@@ -2,9 +2,7 @@ use ggez::{Context, ContextBuilder, GameResult};
 use ggez::graphics::{self, *};
 use ggez::event::{self, EventHandler};
 use ggez::timer::sleep;
-use glam::*;
 
-use std::path::Path;
 use std::time::Duration;
 
 mod consts;
@@ -29,8 +27,6 @@ struct MyGame {
 
 impl MyGame {
     pub fn new(_ctx: &mut Context) -> MyGame {
-        let path = Path::new("/Punk_idle.png");
-        let image = graphics::Image::new(_ctx, path).unwrap();
         MyGame {
             char: Punk::new(_ctx)
         }
