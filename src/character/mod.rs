@@ -12,6 +12,14 @@ use glam::Vec2;
 use crate::consts::{CHAR_WIDTH, RUN_SPEED};
 
 
+#[derive(Debug, PartialEq, Eq, Hash)]
+enum CharacterAnimation {
+    Idle,
+    Run,
+    Jump
+}
+
+
 pub struct Animation {
     image: Image,
     current: i8,
@@ -82,10 +90,10 @@ impl Location {
 
 
 pub struct Character {
-    animations: HashMap<String, RefCell<Animation>>,
+    animations: HashMap<CharacterAnimation, RefCell<Animation>>,
     location: Location,
     state: CharacterState,
-    current: String
+    current: CharacterAnimation
 }
 
 impl Character {
@@ -116,7 +124,8 @@ impl Character {
     }
 
     fn run_right(&mut self, _ctx: &mut Context) {
-        let mut current_anim = self.animations.get("run").unwrap().borrow_mut();
+        self.current = CharacterAnimation::Run;
+        let mut current_anim = self.animations.get(&self.current).unwrap().borrow_mut();
         self.location.src_x = current_anim.next_x();
         if self.state.is_flipped {
             self.state.is_flipped = false;
@@ -130,12 +139,11 @@ impl Character {
         } else {
             width - CHAR_WIDTH / 2.
         };
-
-        self.current = "run".to_string();
     }
 
     fn run_left(&mut self, _ctx: &mut Context) {
-        let mut current_anim = self.animations.get("run").unwrap().borrow_mut();
+        self.current = CharacterAnimation::Run;
+        let mut current_anim = self.animations.get(&self.current).unwrap().borrow_mut();
         self.location.src_x = current_anim.next_x();
         if !self.state.is_flipped {
             self.state.is_flipped = true;
@@ -148,25 +156,24 @@ impl Character {
         } else {
             CHAR_WIDTH / 2.
         };
-
-        self.current = "run".to_string();
     }
 
     fn idle(&mut self, _ctx: &mut Context) {
-        let mut idle_anim = self.animations.get("idle").unwrap().borrow_mut();
+        self.current = CharacterAnimation::Idle;
+        let mut idle_anim = self.animations.get(&self.current).unwrap().borrow_mut();
         self.location.src_x = idle_anim.next_x();
-        self.current = "idle".to_string();
     }
 
     fn perform_jump(&mut self, _ctx: &mut Context) {
-        self.current = "jump".to_string();
-        let mut current_anim = self.animations.get("jump").unwrap().borrow_mut();
+        self.current = CharacterAnimation::Jump;
+        let mut current_anim = self.animations.get(&self.current).unwrap().borrow_mut();
         self.location.src_x = current_anim.next_x();
         self.perform_action(current_anim);
     }
 
     pub fn update(&mut self, _ctx: &mut Context) -> GameResult<()> {
-        let jumping: bool = self.animations.get("jump").unwrap().borrow_mut().performing;
+        let jumping: bool = self.animations.get(&CharacterAnimation::Jump).unwrap().borrow_mut().performing;
+
         if jumping || keyboard::is_key_pressed(_ctx, KeyCode::Space) {
             self.perform_jump(_ctx);
         } else if keyboard::is_key_pressed(_ctx, KeyCode::D) {
@@ -193,14 +200,14 @@ pub struct Punk;
 impl Punk {
     pub fn new(_ctx: &mut Context) -> Character {
         let mut animations = HashMap::new();
-        animations.insert("idle".to_string(), RefCell::new(Animation::new(_ctx, "/Punk_idle.png")));
-        animations.insert("run".to_string(), RefCell::new(Animation::new(_ctx, "/Punk_run.png")));
-        animations.insert("jump".to_string(), RefCell::new(Animation::new(_ctx, "/Punk_jump.png")));
+        animations.insert(CharacterAnimation::Idle, RefCell::new(Animation::new(_ctx, "/Punk_idle.png")));
+        animations.insert(CharacterAnimation::Run, RefCell::new(Animation::new(_ctx, "/Punk_run.png")));
+        animations.insert(CharacterAnimation::Jump,  RefCell::new(Animation::new(_ctx, "/Punk_jump.png")));
         Character {
             animations: animations,
             location: Location::default(),
             state: CharacterState::default(),
-            current: "idle".to_string()
+            current: CharacterAnimation::Idle
         }
     }
 }
