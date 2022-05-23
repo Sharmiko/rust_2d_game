@@ -4,7 +4,7 @@ use ggez::Context;
 use ggez::graphics::{self};
 use ggez::input::mouse::{self};
 
-use crate::state::{State};
+use crate::state::{State, AllStates};
 use crate::character::{Character, Punk};
 
 
@@ -24,15 +24,15 @@ impl PlayState {
 impl State for PlayState {
 
 
-    fn enter(&self, ctx: &mut Context, current_state: &RefCell<String>) {}
+    fn enter(&self, ctx: &mut Context, current_state: &RefCell<AllStates>) {}
 
-    fn exit(&self, ctx: &mut Context, current_state: &RefCell<String>) {}
+    fn exit(&self, ctx: &mut Context, current_state: &RefCell<AllStates>) {}
 
-    fn draw(&mut self, ctx: &mut Context, current_state: &RefCell<String>) {
+    fn draw(&mut self, ctx: &mut Context, current_state: &RefCell<AllStates>) {
         self.player.draw(ctx);
     }
 
-    fn update(&mut self, ctx: &mut Context, current_state: &RefCell<String>) {
+    fn update(&mut self, ctx: &mut Context, current_state: &RefCell<AllStates>) {
         self.player.update(ctx);
     }
 }

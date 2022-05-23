@@ -28,11 +28,11 @@ impl MenuState {
 
 impl State for MenuState {
 
-    fn enter(&self, ctx: &mut Context, current_state: &RefCell<String>) {}
+    fn enter(&self, ctx: &mut Context, current_state: &RefCell<AllStates>) {}
 
-    fn exit(&self, ctx: &mut Context, current_state: &RefCell<String>) {}
+    fn exit(&self, ctx: &mut Context, current_state: &RefCell<AllStates>) {}
 
-    fn draw(&mut self, ctx: &mut Context, current_state: &RefCell<String>) {
+    fn draw(&mut self, ctx: &mut Context, current_state: &RefCell<AllStates>) {
         let mesh = graphics::MeshBuilder::new()
             .rectangle(
                 graphics::DrawMode::stroke(3.), 
@@ -56,14 +56,14 @@ impl State for MenuState {
 
     }
 
-    fn update(&mut self, ctx: &mut Context, current_state: &RefCell<String>) {
+    fn update(&mut self, ctx: &mut Context, current_state: &RefCell<AllStates>) {
         let point = mouse::position(ctx);
         let (mouse_x, mouse_y) = (point.x, point.y);
         if mouse_x > self.rect.x && mouse_x < self.rect.x + self.rect.w &&
             mouse_y > self.rect.y && mouse_y < self.rect.y + self.rect.h
         {
             if mouse::button_pressed(ctx, mouse::MouseButton::Left) {
-                current_state.replace(AllStates::Play.as_str());
+                current_state.replace(AllStates::Play);
             }
         }
     }

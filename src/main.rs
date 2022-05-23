@@ -35,10 +35,10 @@ impl MyGame {
         let menu_state = MenuState::new(ctx);
         let play_state = PlayState::new(ctx);
 
-        states.insert(AllStates::Menu.as_str(), Box::new(menu_state) as Box<dyn State>);
-        states.insert(AllStates::Play.as_str(), Box::new(play_state) as Box<dyn State>);
+        states.insert(AllStates::Menu, Box::new(menu_state) as Box<dyn State>);
+        states.insert(AllStates::Play, Box::new(play_state) as Box<dyn State>);
         
-        let state_machine = StateMachine::new(states, AllStates::Menu.as_str());
+        let state_machine = StateMachine::new(states, AllStates::Menu);
         MyGame {
             state_machine: state_machine,
         }

@@ -11,41 +11,33 @@ pub mod play;
 pub use play::PlayState;
 
 
+#[derive(Debug, PartialEq, Eq, Hash)]
 pub enum AllStates {
     Menu,
     Play
 }
 
-impl AllStates {
-    pub fn as_str(&self) -> String {
-        match self {
-            AllStates::Menu => "menu".to_string(),
-            AllStates::Play => "play".to_string()
-        }
-    }
-}
-
 
 pub trait State {
-    fn enter(&self, ctx: &mut Context, current_state: &RefCell<String>);
-    fn exit(&self, ctx: &mut Context, current_state: &RefCell<String>);
-    fn draw(&mut self, ctx: &mut Context, current_state: &RefCell<String>);
-    fn update(&mut self, ctx: &mut Context, current_state: &RefCell<String>);
+    fn enter(&self, ctx: &mut Context, current_state: &RefCell<AllStates>);
+    fn exit(&self, ctx: &mut Context, current_state: &RefCell<AllStates>);
+    fn draw(&mut self, ctx: &mut Context, current_state: &RefCell<AllStates>);
+    fn update(&mut self, ctx: &mut Context, current_state: &RefCell<AllStates>);
 }
 
 
-pub type StateFunctions = HashMap<String, Box<dyn State>>;
+pub type StateFunctions = HashMap<AllStates, Box<dyn State>>;
 
 
 pub struct StateMachine {
     states: RefCell<StateFunctions>,
-    current: RefCell<String>
+    current: RefCell<AllStates>
 }
 
 
 impl StateMachine {
 
-    pub fn new(states: StateFunctions, current: String) -> Self {
+    pub fn new(states: StateFunctions, current: AllStates) -> Self {
         Self {
             states: RefCell::new(states),
             current: RefCell::new(current)
