@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use ggez::{Context, ContextBuilder, GameResult};
 use ggez::graphics::{self, *};
 use ggez::event::{self, EventHandler};
@@ -5,9 +7,11 @@ use ggez::timer::check_update_time;
 
 
 mod consts;
+mod state;
 mod character;
 
-use character::{Character, Punk};
+
+use state::{StateMachine, State, MenuState, PlayState, AllStates};
 
 
 fn main() {
@@ -21,23 +25,32 @@ fn main() {
 }
 
 struct MyGame {
-    char: Character
+    state_machine: StateMachine,
 }
 
 impl MyGame {
-    pub fn new(_ctx: &mut Context) -> MyGame {
+    pub fn new(ctx: &mut Context) -> MyGame {
+        let mut states = HashMap::new();
+
+        let menu_state = MenuState::new(ctx);
+        let play_state = PlayState::new(ctx);
+
+        states.insert(AllStates::Menu.as_str(), Box::new(menu_state) as Box<dyn State>);
+        states.insert(AllStates::Play.as_str(), Box::new(play_state) as Box<dyn State>);
+        
+        let state_machine = StateMachine::new(states, AllStates::Menu.as_str());
         MyGame {
-            char: Punk::new(_ctx)
+            state_machine: state_machine,
         }
     }
 }
 
 impl EventHandler for MyGame {
-    fn update(&mut self, _ctx: &mut Context) -> GameResult<()> {
+    fn update(&mut self, ctx: &mut Context) -> GameResult<()> {
         const DESIRED_FPS: u32 = 10;
-        while check_update_time(_ctx, DESIRED_FPS) {
+        while check_update_time(ctx, DESIRED_FPS) {
             let _dt = 1. / (DESIRED_FPS as f32);
-            self.char.update(_ctx).unwrap();
+            self.state_machine.update(ctx);
         }
 
         Ok(())
@@ -45,7 +58,7 @@ impl EventHandler for MyGame {
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
         graphics::clear(ctx, Color::WHITE);
-        self.char.draw(ctx);
+        self.state_machine.draw(ctx);
         graphics::present(ctx)
     }
 }
