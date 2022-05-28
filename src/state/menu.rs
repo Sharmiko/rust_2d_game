@@ -12,8 +12,8 @@ pub struct MenuState {
 }
 
 impl MenuState {
-    pub fn new(ctx: &mut Context) ->  Self {
-        let (w, h) = graphics::size(ctx);
+    pub fn new(_ctx: &mut Context) ->  Self {
+        let (w, h) = graphics::size(_ctx);
         Self {
             rect: graphics::Rect{
                 x: w / 2. - 300. / 2.,
@@ -28,11 +28,11 @@ impl MenuState {
 
 impl State for MenuState {
 
-    fn enter(&self, ctx: &mut Context, current_state: &RefCell<AllStates>) {}
+    fn enter(&self, _ctx: &mut Context, _current_state: &RefCell<AllStates>) {}
 
-    fn exit(&self, ctx: &mut Context, current_state: &RefCell<AllStates>) {}
+    fn exit(&self, _ctx: &mut Context, _current_state: &RefCell<AllStates>) {}
 
-    fn draw(&mut self, ctx: &mut Context, current_state: &RefCell<AllStates>) {
+    fn draw(&mut self, ctx: &mut Context, _current_state: &RefCell<AllStates>) {
         let mesh = graphics::MeshBuilder::new()
             .rectangle(
                 graphics::DrawMode::stroke(3.), 
@@ -56,13 +56,13 @@ impl State for MenuState {
 
     }
 
-    fn update(&mut self, ctx: &mut Context, current_state: &RefCell<AllStates>) {
-        let point = mouse::position(ctx);
+    fn update(&mut self, _ctx: &mut Context, current_state: &RefCell<AllStates>) {
+        let point = mouse::position(_ctx);
         let (mouse_x, mouse_y) = (point.x, point.y);
         if mouse_x > self.rect.x && mouse_x < self.rect.x + self.rect.w &&
             mouse_y > self.rect.y && mouse_y < self.rect.y + self.rect.h
         {
-            if mouse::button_pressed(ctx, mouse::MouseButton::Left) {
+            if mouse::button_pressed(_ctx, mouse::MouseButton::Left) {
                 current_state.replace(AllStates::Play);
             }
         }

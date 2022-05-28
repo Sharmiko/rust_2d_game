@@ -1,21 +1,23 @@
 use std::cell::RefCell;
 
 use ggez::Context;
-use ggez::graphics::{self};
-use ggez::input::mouse::{self};
 
 use crate::state::{State, AllStates};
-use crate::character::{Character, Punk};
+use crate::character::{Character};
+use crate::character::chars::{Punk, Biker, Cyborg};
+use crate::tile::{Background, ParkBackground};
 
 
 pub struct PlayState {
-    player: Character
+    player: Character,
+    background: Background
 }
 
 impl PlayState {
     pub fn new(ctx: &mut Context) ->  Self {
         Self {
-            player: Punk::new(ctx)
+            player: Punk::new(ctx),
+            background: ParkBackground::new(ctx)
         }
     }
 }
@@ -24,15 +26,17 @@ impl PlayState {
 impl State for PlayState {
 
 
-    fn enter(&self, ctx: &mut Context, current_state: &RefCell<AllStates>) {}
+    fn enter(&self, _ctx: &mut Context, _current_state: &RefCell<AllStates>) {}
 
-    fn exit(&self, ctx: &mut Context, current_state: &RefCell<AllStates>) {}
+    fn exit(&self, _ctx: &mut Context, _current_state: &RefCell<AllStates>) {}
 
-    fn draw(&mut self, ctx: &mut Context, current_state: &RefCell<AllStates>) {
-        self.player.draw(ctx);
+    fn draw(&mut self, _ctx: &mut Context, _current_state: &RefCell<AllStates>) {
+        self.background.draw(_ctx);
+        self.player.draw(_ctx);
     }
 
-    fn update(&mut self, ctx: &mut Context, current_state: &RefCell<AllStates>) {
-        self.player.update(ctx);
+    fn update(&mut self, _ctx: &mut Context, _current_state: &RefCell<AllStates>) {
+        self.background.update(_ctx).unwrap();
+        self.player.update(_ctx).unwrap();
     }
 }

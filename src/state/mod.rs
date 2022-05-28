@@ -19,10 +19,10 @@ pub enum AllStates {
 
 
 pub trait State {
-    fn enter(&self, ctx: &mut Context, current_state: &RefCell<AllStates>);
-    fn exit(&self, ctx: &mut Context, current_state: &RefCell<AllStates>);
-    fn draw(&mut self, ctx: &mut Context, current_state: &RefCell<AllStates>);
-    fn update(&mut self, ctx: &mut Context, current_state: &RefCell<AllStates>);
+    fn enter(&self, _ctx: &mut Context, _current_state: &RefCell<AllStates>);
+    fn exit(&self, _ctx: &mut Context, _current_state: &RefCell<AllStates>);
+    fn draw(&mut self, _ctx: &mut Context, _current_state: &RefCell<AllStates>);
+    fn update(&mut self, _ctx: &mut Context, _current_state: &RefCell<AllStates>);
 }
 
 
@@ -44,15 +44,15 @@ impl StateMachine {
         }
     }
 
-    pub fn update(&mut self, ctx: &mut Context) {
+    pub fn update(&mut self, _ctx: &mut Context) {
         let mut borrowed = self.states.borrow_mut();
-        let mut current = borrowed.get_mut(&*self.current.borrow()).unwrap();
-        current.update(ctx, &self.current);
+        let current = borrowed.get_mut(&*self.current.borrow()).unwrap();
+        current.update(_ctx, &self.current);
     }
 
-    pub fn draw(&mut self, ctx: &mut Context) {
+    pub fn draw(&mut self, _ctx: &mut Context) {
         let mut borrowed = self.states.borrow_mut();
-        let mut current = borrowed.get_mut(&*self.current.borrow()).unwrap();
-        current.draw(ctx, &self.current)
+        let current = borrowed.get_mut(&*self.current.borrow()).unwrap();
+        current.draw(_ctx, &self.current)
     }
 }
