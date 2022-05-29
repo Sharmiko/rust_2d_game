@@ -8,7 +8,9 @@ use ggez::input::keyboard;
 use ggez::event::KeyCode;
 use ggez::{Context, GameResult};
 
+use crate::utils::join_paths;
 use crate::animation::MovingBackground;
+use crate::consts::PARK_DAY_BACKGROUND_DIR;
 
 
 pub struct Background {
@@ -53,13 +55,13 @@ pub struct ParkBackground;
 impl ParkBackground {
     pub fn new(_ctx: &mut Context) -> Background {
         let mut static_background = BTreeMap::new();
-        static_background.insert("background1".to_string(), RefCell::new(graphics::Image::new(_ctx, Path::new("/1.png")).unwrap()));
+        static_background.insert("background1".to_string(), RefCell::new(graphics::Image::new(_ctx, &join_paths(PARK_DAY_BACKGROUND_DIR, "1.png")).unwrap()));
 
         let mut moving_background = BTreeMap::new();
-        moving_background.insert("background2".to_string(), RefCell::new(MovingBackground::new(_ctx, "/2.png", 0.5)));
-        moving_background.insert("background3".to_string(), RefCell::new(MovingBackground::new(_ctx, "/3.png", 1.5)));
-        moving_background.insert("background4".to_string(), RefCell::new(MovingBackground::new(_ctx, "/4.png", 1.7)));
-        moving_background.insert("background5".to_string(), RefCell::new(MovingBackground::new(_ctx, "/5.png", 2.)));
+        moving_background.insert("background2".to_string(), RefCell::new(MovingBackground::new(_ctx, &join_paths(PARK_DAY_BACKGROUND_DIR, "2.png"), 0.5)));
+        moving_background.insert("background3".to_string(), RefCell::new(MovingBackground::new(_ctx, &join_paths(PARK_DAY_BACKGROUND_DIR, "3.png"), 1.5)));
+        moving_background.insert("background4".to_string(), RefCell::new(MovingBackground::new(_ctx, &join_paths(PARK_DAY_BACKGROUND_DIR, "4.png"), 1.7)));
+        moving_background.insert("background5".to_string(), RefCell::new(MovingBackground::new(_ctx, &join_paths(PARK_DAY_BACKGROUND_DIR, "5.png"), 2.)));
         Background {
             static_background: static_background,
             moving_background: moving_background
