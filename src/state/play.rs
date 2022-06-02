@@ -5,19 +5,21 @@ use ggez::Context;
 use crate::state::{State, AllStates};
 use crate::character::{Character};
 use crate::character::chars::{Punk, Biker, Cyborg};
-use crate::tile::{Background, ParkBackground};
+use crate::tile::{Background, ParkBackground, Floor};
 
 
 pub struct PlayState {
     player: Character,
-    background: Background
+    background: Background,
+    floor: Floor
 }
 
 impl PlayState {
     pub fn new(ctx: &mut Context) ->  Self {
         Self {
             player: Punk::new(ctx),
-            background: ParkBackground::new(ctx)
+            background: ParkBackground::new(ctx),
+            floor: Floor::new(ctx)
         }
     }
 }
@@ -32,6 +34,7 @@ impl State for PlayState {
 
     fn draw(&mut self, _ctx: &mut Context, _current_state: &RefCell<AllStates>) {
         self.background.draw(_ctx);
+        self.floor.draw(_ctx);
         self.player.draw(_ctx);
     }
 
