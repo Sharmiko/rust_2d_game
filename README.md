@@ -3,4 +3,4 @@
 
 ### Assets
 
-Assets are collected from [here](https://free-game-assets.itch.io/free-3-cyberpunk-sprites-pixel-art?download).
+Assets are collected from [here](https://itch.io/c/2053292/cyberpunk-pixel-art).
