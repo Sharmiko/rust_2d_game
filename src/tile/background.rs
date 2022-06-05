@@ -61,6 +61,7 @@ impl ParkBackground {
         moving_background.insert("background3".to_string(), RefCell::new(MovingBackground::new(_ctx, &join_paths(PARK_DAY_BACKGROUND_DIR, "3.png"), 1.5)));
         moving_background.insert("background4".to_string(), RefCell::new(MovingBackground::new(_ctx, &join_paths(PARK_DAY_BACKGROUND_DIR, "4.png"), 1.7)));
         moving_background.insert("background5".to_string(), RefCell::new(MovingBackground::new(_ctx, &join_paths(PARK_DAY_BACKGROUND_DIR, "5.png"), 2.)));
+        
         Background {
             static_background: static_background,
             moving_background: moving_background
