@@ -9,6 +9,7 @@ use glam::Vec2;
 pub struct SpriteAnimation {
     pub image: Image,
     pub performing: bool,
+    pub src_x: f32,
     pub image_idx: i8,
     pub image_count: i8,
     pub image_width: f32
@@ -23,6 +24,7 @@ impl SpriteAnimation {
         Self {
             image: image,
             image_idx: 0,
+            src_x: 0.,
             image_count: image_count,
             image_width: 1. / image_count as f32,
             performing: false
