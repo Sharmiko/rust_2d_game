@@ -8,16 +8,22 @@ use ggez::graphics::{self, *};
 
 use glam::Vec2;
 
-use crate::consts::{CHAR_WIDTH, RUN_SPEED, JUMP_SPEED_DY, JUMP_SPEED_DX};
-
+use crate::base::CustomRect;
+use crate::quadtree::QuadTree;
 use crate::animation::SpriteAnimation;
+use crate::collisions::{rect_collision, SideCollided};
+use crate::consts::{
+    CHAR_WIDTH, RUN_SPEED, JUMP_SPEED_DY, 
+    JUMP_SPEED_DX, CHAR_SCALE_FACTOR
+};
+
 
 
 pub mod chars;
 
 
 #[derive(Debug, PartialEq, Eq, Hash)]
-enum CharacterAnimation {
+pub enum CharacterAnimation {
     Idle,
     Run,
     Jump,
@@ -29,7 +35,8 @@ enum CharacterAnimation {
 pub struct CharacterState {
     is_flipped: bool,
     jumping_right: bool,
-    jumping_left: bool
+    jumping_left: bool,
+    falling: bool
 }
 
 impl CharacterState {
@@ -37,25 +44,28 @@ impl CharacterState {
         Self {
             is_flipped: false,
             jumping_right: false,
-            jumping_left: false
+            jumping_left: false,
+            falling: true
         }
     }
 }
 
 
-pub struct Location {
+pub struct Layout {
     x: f32,
     y: f32,
-    src_x: f32
+    w: f32,
+    h: f32
 }
 
-impl Location {
+impl Layout {
     pub fn default(_ctx: &mut Context) -> Self {
         let (_, h) = graphics::size(_ctx);
         Self {
             x: 100.,
-            y: h - CHAR_WIDTH - 64.,
-            src_x: 0.
+            y: 100.,
+            w: CHAR_WIDTH,
+            h: CHAR_WIDTH
         }
     }
 }
@@ -63,12 +73,29 @@ impl Location {
 
 pub struct Character {
     animations: HashMap<CharacterAnimation, RefCell<SpriteAnimation>>,
-    location: Location,
+    layout: Layout,
     state: CharacterState,
-    current: CharacterAnimation
+    current: CharacterAnimation,
+    pub quadtree: QuadTree
 }
 
 impl Character {
+
+    pub fn default(_ctx: &mut Context) -> Self {
+        let (w, h) = graphics::size(_ctx);
+        Self {
+            animations: HashMap::new(),
+            layout: Layout::default(_ctx),
+            state: CharacterState::default(),
+            current: CharacterAnimation::Idle,
+            quadtree: QuadTree::new(0., 0., w, h)
+        }
+    }
+
+    pub fn insert_animation(&mut self, animation: CharacterAnimation, sprite: SpriteAnimation) {
+        self.animations.insert(animation, RefCell::new(sprite));
+    }
+
 
     pub fn perform_action(&self, mut animation: RefMut<'_, SpriteAnimation>) {
         if !animation.performing {
@@ -87,16 +114,13 @@ impl Character {
                 w: w,
                 h: 1f32
             })
-            .dest(Vec2::new(self.location.x, self.location.y));
+            .dest(Vec2::new(self.layout.x, self.layout.y));
             
-
-        let mut scale_x = 3f32;
-
         if self.state.is_flipped {
-            scale_x *= -1.;
+            params = params.scale(Vec2::new(-CHAR_SCALE_FACTOR, CHAR_SCALE_FACTOR));
+        } else {
+            params = params.scale(Vec2::new(CHAR_SCALE_FACTOR, CHAR_SCALE_FACTOR));
         }
-
-        params = params.scale(Vec2::new(scale_x, 3f32));
 
         return params;
     }
@@ -104,78 +128,116 @@ impl Character {
     fn run_right(&mut self, _ctx: &mut Context) {
         self.current = CharacterAnimation::Run;
         let mut current_anim = self.animations.get(&self.current).unwrap().borrow_mut();
-        self.location.src_x = current_anim.next_x();
+        current_anim.src_x = current_anim.next_x();
         if self.state.is_flipped {
             self.state.is_flipped = false;
-            self.location.x -= CHAR_WIDTH / 2.;
+            self.layout.x -= self.layout.w / 4.;
         }
 
-        self.location.x += RUN_SPEED;
+        self.layout.x += RUN_SPEED;
         let (width, _) = graphics::size(_ctx);
-        self.location.x = if self.location.x + CHAR_WIDTH / 2. <= width {
-            self.location.x
+        self.layout.x = if self.layout.x + self.layout.w / 2. <= width {
+            self.layout.x
         } else {
-            width - CHAR_WIDTH / 2.
+            width - self.layout.w
         };
     }
 
     fn run_left(&mut self, _ctx: &mut Context) {
         self.current = CharacterAnimation::Run;
         let mut current_anim = self.animations.get(&self.current).unwrap().borrow_mut();
-        self.location.src_x = current_anim.next_x();
+        current_anim.src_x = current_anim.next_x();
         if !self.state.is_flipped {
             self.state.is_flipped = true;
-            self.location.x += CHAR_WIDTH / 2.;
+            self.layout.x += self.layout.w / 4.;
         }
 
-        self.location.x -= RUN_SPEED;
-        self.location.x = if self.location.x - CHAR_WIDTH / 2. >= 0. {
-            self.location.x
+        self.layout.x -= RUN_SPEED;
+        self.layout.x = if self.layout.x - self.layout.w / 2. >= 0. {
+            self.layout.x
         } else {
-            CHAR_WIDTH / 2.
+            self.layout.w / 2.
         };
     }
 
     fn idle(&mut self, _ctx: &mut Context) {
         self.current = CharacterAnimation::Idle;
         let mut idle_anim = self.animations.get(&self.current).unwrap().borrow_mut();
-        self.location.src_x = idle_anim.next_x();
+        idle_anim.src_x = idle_anim.next_x();
     }
 
     fn perform_jump(&mut self, _ctx: &mut Context) {
         self.current = CharacterAnimation::Jump;
         let mut current_anim = self.animations.get(&self.current).unwrap().borrow_mut();
         if current_anim.image_idx * 2 < current_anim.image_count {
-            self.location.y -= JUMP_SPEED_DY;
+            self.layout.y -= JUMP_SPEED_DY;
         } else {
-            self.location.y += JUMP_SPEED_DY;
+            self.layout.y += JUMP_SPEED_DY;
         }
 
         if self.state.jumping_right {
-            self.location.x += JUMP_SPEED_DX;
+            self.layout.x += JUMP_SPEED_DX;
         } else if self.state.jumping_left {
-            self.location.x -= JUMP_SPEED_DX;
+            self.layout.x -= JUMP_SPEED_DX;
         }
 
-        self.location.src_x = current_anim.next_x();
+        current_anim.src_x = current_anim.next_x();
         self.perform_action(current_anim);
     }
 
     fn perform_attack(&mut self, _ctx: &mut Context) {
         self.current = CharacterAnimation::Attack;
         let mut current_anim = self.animations.get(&self.current).unwrap().borrow_mut();
-        self.location.src_x = current_anim.next_x();
+        current_anim.src_x = current_anim.next_x();
         self.perform_action(current_anim);
     }
 
-    fn perform_double_jump(&mut self, _ctx: &mut Context) {
-        self.current = CharacterAnimation::DoubleJump;
-        let mut current_anim = self.animations.get(&self.current).unwrap().borrow_mut();
-        self.location.src_x = current_anim.next_x();
-        self.perform_action(current_anim);
+    // fn perform_double_jump(&mut self, _ctx: &mut Context) {
+    //     self.current = CharacterAnimation::DoubleJump;
+    //     let mut current_anim = self.animations.get(&self.current).unwrap().borrow_mut();
+    //     current_anim.src_x = current_anim.next_x();
+    //     self.perform_action(current_anim);
+    // }
+
+    pub fn update(&mut self, _ctx: &mut Context) -> GameResult<()>{
+        if !self.state.falling {
+            self._update(_ctx).unwrap();
+        } else {
+            self.layout.y += 50.;
+        }
+
+        let mut char_rect = CustomRect::new(
+            self.layout.x,
+            self.layout.y,
+            self.layout.w,
+            self.layout.h
+        );
+        if self.state.is_flipped {
+            char_rect.fields.x -= self.layout.w / 4.;
+        }
+        let data = self.quadtree.search(self.layout.x, self.layout.y);
+        if data.is_some() {
+            for loc in data.unwrap() {
+                let side = rect_collision(&char_rect.fields, loc);
+                if side.is_some() {
+                    match side.unwrap() {
+                        SideCollided::Top => {
+                            if self.state.falling {
+                                self.layout.y = loc.y - self.layout.h;
+                            }
+                            self.state.falling = false;
+                        }
+                        _ => ()
+                    }
+                }
+            }
+        }
+
+
+        Ok(())
     }
 
-    pub fn update(&mut self, _ctx: &mut Context) -> GameResult<()> {
+    pub fn _update(&mut self, _ctx: &mut Context) -> GameResult<()> {
         let jumping: bool = self.animations.get(&CharacterAnimation::Jump).unwrap().borrow().performing;
         let attacking: bool = self.animations.get(&CharacterAnimation::Attack).unwrap().borrow().performing;
 
@@ -202,13 +264,38 @@ impl Character {
         } else {
             self.idle(_ctx);
         }
-
         Ok(())
     }
 
+
+
     pub fn draw(&mut self, ctx: &mut Context)  {
         let current_anim = self.animations.get(&self.current).unwrap().borrow_mut();
-        let params = self.param(self.location.src_x, current_anim.image_width);
+        let params = self.param(current_anim.src_x, current_anim.image_width);
         current_anim.image.draw(ctx, params).unwrap();
+
+        // TODO - remove later
+        // START
+        let mut char_rect = CustomRect::new(
+            self.layout.x,
+            self.layout.y,
+            self.layout.w,
+            self.layout.h
+        );
+        if self.state.is_flipped {
+            char_rect.fields.x -= self.layout.w / 4.;
+        }
+        char_rect.draw(ctx);
+
+        self.quadtree.draw_boundries(ctx, graphics::Color::BLUE);
+        
+        let data = self.quadtree.search(self.layout.x, self.layout.y);
+        if data.is_some() {
+            for loc in data.unwrap() {
+                let mut rect = CustomRect::from_rect(*loc);
+                rect.draw(ctx);
+            }
+        }
+        // END
     }
 }
