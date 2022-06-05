@@ -12,6 +12,9 @@ mod consts;
 mod state;
 mod tile;
 mod utils;
+mod base;
+mod collisions;
+mod quadtree;
 mod animation;
 mod character;
 
