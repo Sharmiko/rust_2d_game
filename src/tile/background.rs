@@ -4,7 +4,7 @@ use std::collections::BTreeMap;
 use glam::Vec2;
 use ggez::graphics::{self, *};
 use ggez::input::keyboard;
-use ggez::event::KeyCode;
+use ggez::input::keyboard::KeyCode;
 use ggez::{Context, GameResult};
 
 use crate::utils::join_paths;
@@ -29,21 +29,21 @@ impl Background {
         Ok(())
     }
 
-    pub fn draw(&mut self, _ctx: &mut Context)  {
+    pub fn draw(&mut self, _ctx: &mut Context, canvas: &mut Canvas)  {
 
-        let (w, h) = graphics::size(_ctx);
+        let (w, h) = _ctx.gfx.drawable_size();
         for (_, value) in &self.static_background {
-            let image = value.borrow_mut();
+            let image = value.borrow();
             let scale_x = w / image.width() as f32;
             let scale_y = h / image.height() as f32;
             let params = graphics::DrawParam::default()
                 .scale(Vec2::new(scale_x, scale_y))
                 .dest(Vec2::new(0., 0.));
-            image.draw(_ctx, params).unwrap();
+            image.draw(canvas, params);
         }
 
         for (_, value) in &self.moving_background {
-            value.borrow_mut().draw(_ctx);
+            value.borrow_mut().draw(_ctx, canvas);
         }
     }
 }
@@ -54,7 +54,10 @@ pub struct ParkBackground;
 impl ParkBackground {
     pub fn new(_ctx: &mut Context) -> Background {
         let mut static_background = BTreeMap::new();
-        static_background.insert("background1".to_string(), RefCell::new(graphics::Image::new(_ctx, &join_paths(PARK_DAY_BACKGROUND_DIR, "1.png")).unwrap()));
+        static_background.insert(
+            "background1".to_string(), 
+            RefCell::new(graphics::Image::from_path(_ctx, &join_paths(PARK_DAY_BACKGROUND_DIR, "1.png"), true).unwrap())
+        );
 
         let mut moving_background = BTreeMap::new();
         moving_background.insert("background2".to_string(), RefCell::new(MovingBackground::new(_ctx, &join_paths(PARK_DAY_BACKGROUND_DIR, "2.png"), 0.5)));

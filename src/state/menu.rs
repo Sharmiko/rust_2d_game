@@ -1,7 +1,7 @@
 use std::cell::RefCell;
 
 use ggez::Context;
-use ggez::graphics::{self};
+use ggez::graphics::{self, Canvas};
 use ggez::input::mouse::{self};
 
 use crate::base::CustomRect;
@@ -14,7 +14,7 @@ pub struct MenuState {
 
 impl MenuState {
     pub fn new(_ctx: &mut Context) ->  Self {
-        let (w, h) = graphics::size(_ctx);
+        let (w, h) = _ctx.gfx.drawable_size();
         Self {
             rect: CustomRect::new(
                 w / 2. - 300. / 2.,
@@ -33,13 +33,13 @@ impl State for MenuState {
 
     fn exit(&self, _ctx: &mut Context, _current_state: &RefCell<AllStates>) {}
 
-    fn draw(&mut self, ctx: &mut Context, _current_state: &RefCell<AllStates>) {
-        self.rect.draw(ctx);
+    fn draw(&mut self, ctx: &mut Context, canvas: &mut Canvas, _current_state: &RefCell<AllStates>) {
+        self.rect.draw(ctx, canvas);
         let draw_params = graphics::DrawParam::new()
             .dest(glam::Vec2::new(self.rect.fields.x, self.rect.fields.y));
 
         let text = graphics::Text::new("Play");
-        graphics::draw(ctx, &text, draw_params.color(graphics::Color::RED)).unwrap();
+        canvas.draw(&text, draw_params.color(graphics::Color::RED));
     }
 
     fn update(&mut self, _ctx: &mut Context, current_state: &RefCell<AllStates>) {

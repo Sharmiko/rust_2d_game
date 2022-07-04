@@ -2,7 +2,7 @@ use std::cell::{RefCell, RefMut};
 use std::collections::HashMap;
 
 use ggez::{Context, GameResult};
-use ggez::event::KeyCode;
+use ggez::input::keyboard::KeyCode;
 use ggez::input::keyboard;
 use ggez::graphics::{self, *};
 
@@ -60,7 +60,7 @@ pub struct Layout {
 
 impl Layout {
     pub fn default(_ctx: &mut Context) -> Self {
-        let (_, h) = graphics::size(_ctx);
+        let (_, h) = _ctx.gfx.drawable_size();
         Self {
             x: 100.,
             y: 100.,
@@ -82,7 +82,7 @@ pub struct Character {
 impl Character {
 
     pub fn default(_ctx: &mut Context) -> Self {
-        let (w, h) = graphics::size(_ctx);
+        let (w, h) = _ctx.gfx.drawable_size();
         Self {
             animations: HashMap::new(),
             layout: Layout::default(_ctx),
@@ -115,11 +115,12 @@ impl Character {
                 h: 1f32
             })
             .dest(Vec2::new(self.layout.x, self.layout.y));
+            //.image_scale(false);
             
         if self.state.is_flipped {
-            params = params.scale(Vec2::new(-CHAR_SCALE_FACTOR, CHAR_SCALE_FACTOR));
+            params = params.scale([-CHAR_SCALE_FACTOR * w, CHAR_SCALE_FACTOR]);
         } else {
-            params = params.scale(Vec2::new(CHAR_SCALE_FACTOR, CHAR_SCALE_FACTOR));
+            params = params.scale([CHAR_SCALE_FACTOR * w, CHAR_SCALE_FACTOR]);
         }
 
         return params;
@@ -135,7 +136,7 @@ impl Character {
         }
 
         self.layout.x += RUN_SPEED;
-        let (width, _) = graphics::size(_ctx);
+        let (width, _) = _ctx.gfx.size();
         self.layout.x = if self.layout.x + self.layout.w / 2. <= width {
             self.layout.x
         } else {
@@ -246,20 +247,20 @@ impl Character {
             self.state.jumping_right = false;
         }
 
-        if jumping || keyboard::is_key_pressed(_ctx, KeyCode::Space) {
-            if keyboard::is_key_pressed(_ctx, KeyCode::D) && keyboard::is_key_pressed(_ctx, KeyCode::Space) {
+        if jumping || _ctx.keyboard.is_key_pressed(KeyCode::Space) {
+            if _ctx.keyboard.is_key_pressed(KeyCode::D) && _ctx.keyboard.is_key_pressed(KeyCode::Space) {
                 self.state.jumping_right = true;
                 self.state.is_flipped = false;
-            } else if keyboard::is_key_pressed(_ctx, KeyCode::A) && keyboard::is_key_pressed(_ctx, KeyCode::Space){
+            } else if _ctx.keyboard.is_key_pressed(KeyCode::A) && _ctx.keyboard.is_key_pressed(KeyCode::Space){
                 self.state.is_flipped = true;
                 self.state.jumping_left = true;
             }
             self.perform_jump(_ctx);
-        } else if attacking || keyboard::is_key_pressed(_ctx, KeyCode::F) { 
+        } else if attacking || _ctx.keyboard.is_key_pressed(KeyCode::F) { 
             self.perform_attack(_ctx);
-        } else if keyboard::is_key_pressed(_ctx, KeyCode::D) {
+        } else if _ctx.keyboard.is_key_pressed(KeyCode::D) {
             self.run_right(_ctx);
-        } else if keyboard::is_key_pressed(_ctx, KeyCode::A) {
+        } else if _ctx.keyboard.is_key_pressed(KeyCode::A) {
             self.run_left(_ctx);
         } else {
             self.idle(_ctx);
@@ -268,11 +269,10 @@ impl Character {
     }
 
 
-
-    pub fn draw(&mut self, ctx: &mut Context)  {
+    pub fn draw(&mut self, ctx: &mut Context, canvas: &mut Canvas)  {
         let current_anim = self.animations.get(&self.current).unwrap().borrow_mut();
         let params = self.param(current_anim.src_x, current_anim.image_width);
-        current_anim.image.draw(ctx, params).unwrap();
+        canvas.draw(&current_anim.image, params);
 
         // TODO - remove later
         // START
@@ -285,15 +285,15 @@ impl Character {
         if self.state.is_flipped {
             char_rect.fields.x -= self.layout.w / 4.;
         }
-        char_rect.draw(ctx);
+        char_rect.draw(ctx, canvas);
 
-        self.quadtree.draw_boundries(ctx, graphics::Color::BLUE);
+        self.quadtree.draw_boundries(ctx, canvas, graphics::Color::BLUE);
         
         let data = self.quadtree.search(self.layout.x, self.layout.y);
         if data.is_some() {
             for loc in data.unwrap() {
                 let mut rect = CustomRect::from_rect(*loc);
-                rect.draw(ctx);
+                rect.draw(ctx, canvas);
             }
         }
         // END

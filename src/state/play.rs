@@ -1,6 +1,7 @@
 use std::cell::RefCell;
 
 use ggez::Context;
+use ggez::graphics::Canvas;
 
 use crate::state::{State, AllStates};
 use crate::character::{Character};
@@ -53,10 +54,10 @@ impl State for PlayState {
 
     fn exit(&self, _ctx: &mut Context, _current_state: &RefCell<AllStates>) {}
 
-    fn draw(&mut self, _ctx: &mut Context, _current_state: &RefCell<AllStates>) {
-        self.background.draw(_ctx);
-        self.floor.draw(_ctx);
-        self.player.draw(_ctx);
+    fn draw(&mut self, _ctx: &mut Context, canvas: &mut Canvas, _current_state: &RefCell<AllStates>) {
+        self.background.draw(_ctx, canvas);
+        self.floor.draw(_ctx, canvas);
+        self.player.draw(_ctx, canvas);
     }
 
     fn update(&mut self, _ctx: &mut Context, _current_state: &RefCell<AllStates>) {

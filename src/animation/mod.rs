@@ -19,7 +19,7 @@ pub struct SpriteAnimation {
 impl SpriteAnimation {
 
     pub fn new(ctx: &mut Context, image_path: &str) -> Self {
-        let image = graphics::Image::new(ctx, Path::new(image_path)).unwrap();
+        let image = graphics::Image::from_path(ctx, Path::new(image_path), true).unwrap();
         let image_count = (image.width() / image.height()) as i8;
         Self {
             image: image,
@@ -55,7 +55,7 @@ impl MovingBackground {
 
     pub fn new(_ctx: &mut Context, image_path: &str, step_size: f32) -> Self {
         Self {
-            image: graphics::Image::new(_ctx, Path::new(image_path)).unwrap(),
+            image: graphics::Image::from_path(_ctx, Path::new(image_path), true).unwrap(),
             step: 0.,
             step_size: step_size
         }
@@ -71,36 +71,37 @@ impl MovingBackground {
         Ok(())
     }
 
-    pub fn draw(&mut self, _ctx: &mut Context)  {
+    pub fn draw(&mut self, _ctx: &mut Context, canvas: &mut Canvas)  {
 
         let step = self.step as f32 / 100.;
 
-        let (w, h) = graphics::size(_ctx);
+        let (w, h) = _ctx.gfx.drawable_size();
         let mut scale_x  = (w * (1. - step as f32)) / (self.image.width() as f32 * (1. - step as f32));
         let mut scale_y  = h / self.image.height() as f32;
+        let mut src_w = 1. - step as f32;
         let params = graphics::DrawParam::default()
-            .scale(Vec2::new(scale_x, scale_y))
+            .scale([scale_x * src_w, scale_y])
             .src(graphics::Rect {
                 x: step as f32,
                 y: 0f32,
-                w: 1. - step as f32,
+                w: src_w,
                 h: 1f32
             })
             .dest(Vec2::new(0., 0.));
-        self.image.draw(_ctx, params).unwrap();
+        canvas.draw(&self.image, params);
 
-        
         scale_x  = (w * step) / (self.image.width() as f32 * step);
         scale_y  = h / self.image.height() as f32;
+        src_w = step as f32;
         let params = graphics::DrawParam::default()
-            .scale(Vec2::new(scale_x, scale_y))
+            .scale([scale_x, scale_y])
             .src(graphics::Rect {
                 x: 0.,
                 y: 0f32,
-                w: step as f32,
+                w: src_w,
                 h: 1f32
             })
             .dest(Vec2::new(self.image.width() as f32 * scale_x * (1. - step as f32), 0.));
-        self.image.draw(_ctx, params).unwrap();
+        canvas.draw(&self.image, params);
     }
 }

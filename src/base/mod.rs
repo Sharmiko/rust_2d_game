@@ -35,10 +35,10 @@ impl CustomRect {
         }
     }
 
-    pub fn draw(&mut self, ctx: &mut Context) {
-        let mesh = graphics::MeshBuilder::new()
-        .rectangle(
-            graphics::DrawMode::stroke(3.), 
+    pub fn draw(&mut self, ctx: &mut Context, canvas: &mut Canvas) {
+        let mesh = graphics::Mesh::new_rectangle(
+            &ctx.gfx, 
+            graphics::DrawMode::stroke(3.),             
             graphics::Rect {
                 x: 0.,
                 y: 0.,
@@ -46,10 +46,10 @@ impl CustomRect {
                 h: self.fields.h
             },
             graphics::Color::BLUE
-        ).unwrap().build(ctx).unwrap();
+        ).unwrap();
 
         let draw_params = graphics::DrawParam::new()
             .dest(glam::Vec2::new(self.fields.x, self.fields.y));
-        graphics::draw(ctx, &mesh, draw_params).unwrap();
+        canvas.draw(&mesh, draw_params);
     }
 }

@@ -104,7 +104,7 @@ impl QuadTree {
         }
     }
 
-    pub fn draw_boundries(&self, ctx: &mut Context, color: graphics::Color) {
+    pub fn draw_boundries(&self, ctx: &mut Context, canvas: &mut Canvas, color: graphics::Color) {
         let rect = graphics::Rect{
             x: self.boundary.x,
             y: self.boundary.y,
@@ -112,8 +112,8 @@ impl QuadTree {
             h: self.boundary.h
         };
 
-        let mesh = graphics::MeshBuilder::new()
-        .rectangle(
+        let mesh = graphics::Mesh::new_rectangle(
+            &ctx.gfx, 
             graphics::DrawMode::stroke(3.), 
             graphics::Rect {
                 x: 0.,
@@ -122,28 +122,27 @@ impl QuadTree {
                 h: rect.h
             },
             color
-        ).unwrap().build(ctx).unwrap();
-        
+        ).unwrap();
 
         let draw_params = graphics::DrawParam::new()
             .dest(glam::Vec2::new(self.boundary.x, self.boundary.y));
 
-        graphics::draw(ctx, &mesh, draw_params).unwrap();
+        canvas.draw(&mesh, draw_params);
 
         if !self.top_left.is_none() {
-            self.top_left.as_ref().unwrap().draw_boundries(ctx, graphics::Color::YELLOW);
+            self.top_left.as_ref().unwrap().draw_boundries(ctx, canvas, graphics::Color::YELLOW);
         }
 
         if !self.top_right.is_none() {
-            self.top_right.as_ref().unwrap().draw_boundries(ctx, graphics::Color::RED);
+            self.top_right.as_ref().unwrap().draw_boundries(ctx, canvas, graphics::Color::RED);
         }
 
         if !self.bottom_left.is_none() {
-            self.bottom_left.as_ref().unwrap().draw_boundries(ctx, graphics::Color::GREEN);
+            self.bottom_left.as_ref().unwrap().draw_boundries(ctx, canvas, graphics::Color::GREEN);
         }
 
         if !self.bottom_right.is_none() {
-            self.bottom_right.as_ref().unwrap().draw_boundries(ctx, graphics::Color::MAGENTA);
+            self.bottom_right.as_ref().unwrap().draw_boundries(ctx, canvas, graphics::Color::MAGENTA);
         }
     }
 
