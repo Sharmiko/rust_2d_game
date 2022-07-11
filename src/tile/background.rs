@@ -3,13 +3,12 @@ use std::collections::BTreeMap;
 
 use glam::Vec2;
 use ggez::graphics::{self, *};
-use ggez::input::keyboard;
 use ggez::input::keyboard::KeyCode;
 use ggez::{Context, GameResult};
 
 use crate::utils::join_paths;
 use crate::animation::MovingBackground;
-use crate::consts::PARK_DAY_BACKGROUND_DIR;
+use crate::resources::background;
 
 
 pub struct Background {
@@ -20,9 +19,15 @@ pub struct Background {
 
 impl Background {
     pub fn update(&mut self, _ctx: &mut Context) -> GameResult<()> {
-        if keyboard::is_key_pressed(_ctx, KeyCode::D) {
+        if _ctx.keyboard.is_key_pressed(KeyCode::D) || _ctx.keyboard.is_key_pressed(KeyCode::A) {
+            let forward = if _ctx.keyboard.is_key_pressed(KeyCode::D) { true } else { false };
             for (_, value) in &self.moving_background {
-                value.borrow_mut().update(_ctx).unwrap();
+                let mut moving = value.borrow_mut();
+                if moving.forward != forward {
+                    moving.step = 100f32 - moving.step;
+                }
+                moving.forward = forward;
+                moving.update(_ctx).unwrap();
             }
         }
 
@@ -56,14 +61,26 @@ impl ParkBackground {
         let mut static_background = BTreeMap::new();
         static_background.insert(
             "background1".to_string(), 
-            RefCell::new(graphics::Image::from_path(_ctx, &join_paths(PARK_DAY_BACKGROUND_DIR, "1.png"), true).unwrap())
+            RefCell::new(graphics::Image::from_path(_ctx, &join_paths(background::PARK_DAY_BACKGROUND, "1.png"), true).unwrap())
         );
 
         let mut moving_background = BTreeMap::new();
-        moving_background.insert("background2".to_string(), RefCell::new(MovingBackground::new(_ctx, &join_paths(PARK_DAY_BACKGROUND_DIR, "2.png"), 0.5)));
-        moving_background.insert("background3".to_string(), RefCell::new(MovingBackground::new(_ctx, &join_paths(PARK_DAY_BACKGROUND_DIR, "3.png"), 1.5)));
-        moving_background.insert("background4".to_string(), RefCell::new(MovingBackground::new(_ctx, &join_paths(PARK_DAY_BACKGROUND_DIR, "4.png"), 1.7)));
-        moving_background.insert("background5".to_string(), RefCell::new(MovingBackground::new(_ctx, &join_paths(PARK_DAY_BACKGROUND_DIR, "5.png"), 2.)));
+        moving_background.insert(
+            "background2".to_string(), 
+            RefCell::new(MovingBackground::new(_ctx, &join_paths(background::PARK_DAY_BACKGROUND, "2.png"), 0.5))
+        );
+        moving_background.insert(
+            "background3".to_string(),
+            RefCell::new(MovingBackground::new(_ctx, &join_paths(background::PARK_DAY_BACKGROUND, "3.png"), 1.5))
+        );
+        moving_background.insert(
+            "background4".to_string(), 
+            RefCell::new(MovingBackground::new(_ctx, &join_paths(background::PARK_DAY_BACKGROUND, "4.png"), 1.7))
+        );
+        moving_background.insert(
+            "background5".to_string(), 
+            RefCell::new(MovingBackground::new(_ctx, &join_paths(background::PARK_DAY_BACKGROUND, "5.png"), 2.))
+        );
         
         Background {
             static_background: static_background,

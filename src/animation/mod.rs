@@ -47,8 +47,9 @@ impl SpriteAnimation {
 
 pub struct MovingBackground {
     image: graphics::Image,
-    step: f32,
-    step_size: f32
+    pub step: f32,
+    step_size: f32,
+    pub forward: bool
 }
 
 impl MovingBackground {
@@ -57,7 +58,8 @@ impl MovingBackground {
         Self {
             image: graphics::Image::from_path(_ctx, Path::new(image_path), true).unwrap(),
             step: 0.,
-            step_size: step_size
+            step_size: step_size,
+            forward: true 
         }
     }
 
@@ -71,14 +73,23 @@ impl MovingBackground {
         Ok(())
     }
 
-    pub fn draw(&mut self, _ctx: &mut Context, canvas: &mut Canvas)  {
+    pub fn draw(&mut self, _ctx: &mut Context, canvas: &mut Canvas) {
+        if self.forward {
+            self.draw_forward(_ctx, canvas);
+        } else {
+            self.draw_backward(_ctx, canvas);
+        }
+    }
+
+
+    pub fn draw_forward(&mut self, _ctx: &mut Context, canvas: &mut Canvas)  {
 
         let step = self.step as f32 / 100.;
 
         let (w, h) = _ctx.gfx.drawable_size();
         let mut scale_x  = (w * (1. - step as f32)) / (self.image.width() as f32 * (1. - step as f32));
         let mut scale_y  = h / self.image.height() as f32;
-        let mut src_w = 1. - step as f32;
+        let src_w = 1. - step as f32;
         let params = graphics::DrawParam::default()
             .scale([scale_x * src_w, scale_y])
             .src(graphics::Rect {
@@ -87,21 +98,52 @@ impl MovingBackground {
                 w: src_w,
                 h: 1f32
             })
-            .dest(Vec2::new(0., 0.));
+            .dest([0., 0.]);
         canvas.draw(&self.image, params);
 
         scale_x  = (w * step) / (self.image.width() as f32 * step);
         scale_y  = h / self.image.height() as f32;
-        src_w = step as f32;
         let params = graphics::DrawParam::default()
-            .scale([scale_x, scale_y])
+            .scale([scale_x * step, scale_y])
+            .src(graphics::Rect {
+                x: 0.,
+                y: 0f32,
+                w: step,
+                h: 1f32
+            })
+            .dest([self.image.width() as f32 * scale_x * (1. - step as f32), 0.]);
+        canvas.draw(&self.image, params);
+    }
+
+    pub fn draw_backward(&mut self, _ctx: &mut Context, canvas: &mut Canvas)  {
+
+        let step = self.step as f32 / 100.;
+        let (w, h) = _ctx.gfx.drawable_size();
+        let mut scale_x  = (w * (1. - step as f32)) / (self.image.width() as f32 * (1. - step as f32));
+        let mut scale_y  = h / self.image.height() as f32;
+        let src_w = 1. - step as f32;
+        let params = graphics::DrawParam::default()
+            .scale([scale_x * src_w, scale_y])
             .src(graphics::Rect {
                 x: 0.,
                 y: 0f32,
                 w: src_w,
                 h: 1f32
             })
-            .dest(Vec2::new(self.image.width() as f32 * scale_x * (1. - step as f32), 0.));
+            .dest([self.image.width() as f32 * scale_x * step, 0.]);
+        canvas.draw(&self.image, params);
+
+        scale_x  = (w * step) / (self.image.width() as f32 * step);
+        scale_y  = h / self.image.height() as f32;
+        let params = graphics::DrawParam::default()
+            .scale([scale_x * step, scale_y])
+            .src(graphics::Rect {
+                x: 1f32 - step,
+                y: 0f32,
+                w: step,
+                h: 1f32
+            })
+            .dest([0., 0.]);
         canvas.draw(&self.image, params);
     }
 }
