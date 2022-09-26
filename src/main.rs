@@ -16,7 +16,9 @@ mod collisions;
 mod quadtree;
 mod animation;
 mod character;
-
+mod resources;
+mod tileset;
+mod enemy;
 
 use state::{StateMachine, State, MenuState, PlayState, AllStates};
 
@@ -95,7 +97,6 @@ impl EventHandler for MyGame {
             width as f32 * 1.0,
             height as f32 * 1.0,
         );
-
         Ok(())
     }
 }
