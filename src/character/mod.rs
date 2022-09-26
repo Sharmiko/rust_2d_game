@@ -97,9 +97,7 @@ impl Character {
                             if self.entity.state.falling {
                                 self.entity.layout.y = loc.y - self.entity.layout.h;
                             }
-                            self.entity.state.falling = false;
-                        }
-                        _ => ()
+                            lf.entity.l)   _ => ()
                     }
                 }
             }

@@ -6,7 +6,7 @@ use ggez::graphics::{self, *};
 
 use crate::animation::{SpriteAnimation, HumanAnimation};
 use crate::consts::{
-    CHAR_WIDTH, RUN_SPEED, JUMP_SPEED_DY, 
+    CHAR_WIDTH, CHAR_HEIGHT, RUN_SPEED, JUMP_SPEED_DY, 
     JUMP_SPEED_DX, CHAR_SCALE_FACTOR
 };
 
@@ -63,6 +63,7 @@ impl HumanAnimation for BaseHuman {
         }
         self.layout.x += RUN_SPEED;
     }
+
     fn run_left(&mut self, _ctx: &mut Context) {
         self.update_current_anim(Animation::Run);
         if !self.state.is_flipped {
@@ -71,9 +72,11 @@ impl HumanAnimation for BaseHuman {
         }
         self.layout.x -= RUN_SPEED;
     }
+
     fn idle(&mut self, _ctx: &mut Context) {    
         self.update_current_anim(Animation::Idle);
     }
+
     fn perform_jump(&mut self, _ctx: &mut Context) {
         self.update_current_anim(Animation::Jump);
         let anim = self.animations.get(&self.current).unwrap().borrow_mut();
@@ -101,18 +104,35 @@ impl HumanAnimation for BaseHuman {
 
 impl BaseHuman {
     pub fn default(_ctx: &mut Context) -> Self {
-        let (w, h) = _ctx.gfx.drawable_size();
         Self {
             animations: HashMap::new(),
             layout: Rect {
                 x: 100.,
                 y: 100.,
                 w: CHAR_WIDTH,
-                h: CHAR_WIDTH,
+                h: CHAR_HEIGHT,
             },
             state: State::default(),
             current: Animation::Idle,
         }
+    }
+
+    pub fn dyn_layout(&self) -> Rect {
+        let x = match self.state.is_flipped {
+            true => self.layout.x - self.layout.w + CHAR_WIDTH / 4.,
+            false => self.layout.x - self.layout.w / 4.
+        };
+
+        Rect {
+            x: x,
+            y: self.layout.y,
+            w: self.layout.w,
+            h: self.layout.h
+        }
+    }
+
+    pub fn insert_animation(&mut self, animation: Animation, sprite: SpriteAnimation) {
+        self.animations.insert(animation, RefCell::new(sprite));
     }
     
     pub fn param(&self, src_x: f32, w: f32) -> graphics::DrawParam{
