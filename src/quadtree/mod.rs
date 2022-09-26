@@ -81,7 +81,7 @@ impl QuadTree {
                         (self.boundary.x + self.boundary.w ) / 2.,
                         self.boundary.y,
                         self.boundary.w,
-                        (self.boundary.y  +self.boundary.h) / 2.
+                        (self.boundary.y + self.boundary.h) / 2.
                     )));
                 }
 
