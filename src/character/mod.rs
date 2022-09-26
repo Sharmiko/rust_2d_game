@@ -1,12 +1,10 @@
-use std::cell::RefCell;
-
 use ggez::{Context, GameResult};
-use ggez::graphics::Canvas;
+use ggez::graphics::{Canvas, Rect};
 use ggez::input::keyboard::KeyCode;
 
 use crate::base::CustomRect;
 use crate::quadtree::QuadTree;
-use crate::animation::{SpriteAnimation, HumanAnimation};
+use crate::animation::HumanAnimation;
 use crate::collisions::{rect_collision, SideCollided};
 use crate::base::human::{BaseHuman, Animation};
 
@@ -27,11 +25,6 @@ impl Character {
             quadtree: QuadTree::new(0., 0., w, h)
         }
     }
-
-    pub fn insert_animation(&mut self, animation: Animation, sprite: SpriteAnimation) {
-        self.entity.animations.insert(animation, RefCell::new(sprite));
-    }
-
 
     fn run_right(&mut self, _ctx: &mut Context) {
         self.entity.run_right(_ctx);
@@ -71,7 +64,7 @@ impl Character {
     //     self.perform_action(current_anim);
     // }
 
-    pub fn update(&mut self, _ctx: &mut Context) -> GameResult<()>{
+    pub fn update(&mut self, _ctx: &mut Context) -> GameResult<Rect> {
         if !self.entity.state.falling {
             self._update(_ctx).unwrap();
         } else {
@@ -84,9 +77,11 @@ impl Character {
             self.entity.layout.w,
             self.entity.layout.h
         );
+
         if self.entity.state.is_flipped {
             char_rect.fields.x -= self.entity.layout.w / 4.;
         }
+
         let data = self.quadtree.search(self.entity.layout.x, self.entity.layout.y);
         if data.is_some() {
             for loc in data.unwrap() {
@@ -97,13 +92,15 @@ impl Character {
                             if self.entity.state.falling {
                                 self.entity.layout.y = loc.y - self.entity.layout.h;
                             }
-                            lf.entity.l)   _ => ()
+                            self.entity.state.falling = false;
+                        }
+                        _ => ()
                     }
                 }
             }
         }
 
-        Ok(())
+        Ok(self.entity.layout)
     }
 
     pub fn _update(&mut self, _ctx: &mut Context) -> GameResult<()> {
@@ -138,7 +135,7 @@ impl Character {
 
     pub fn draw(&mut self, ctx: &mut Context, canvas: &mut Canvas)  {
         self.entity.draw(ctx, canvas);
-
+        CustomRect::from_rect(self.entity.dyn_layout()).draw(ctx, canvas);
         // TODO - remove later
         // START
         // let mut char_rect = CustomRect::new(
