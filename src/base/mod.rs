@@ -1,6 +1,8 @@
 use ggez::Context;
 use ggez::graphics::{self, *};
 
+pub mod human;
+
 
 pub enum LocationType {
     Single(Rect),
@@ -35,7 +37,7 @@ impl CustomRect {
         }
     }
 
-    pub fn draw(&mut self, ctx: &mut Context, canvas: &mut Canvas) {
+    pub fn draw(&self, ctx: &mut Context, canvas: &mut Canvas) {
         let mesh = graphics::Mesh::new_rectangle(
             &ctx.gfx, 
             graphics::DrawMode::stroke(3.),             
@@ -49,7 +51,7 @@ impl CustomRect {
         ).unwrap();
 
         let draw_params = graphics::DrawParam::new()
-            .dest(glam::Vec2::new(self.fields.x, self.fields.y));
+            .dest([self.fields.x, self.fields.y]);
         canvas.draw(&mesh, draw_params);
     }
 }
