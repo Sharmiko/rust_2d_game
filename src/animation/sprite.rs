@@ -17,7 +17,7 @@ pub struct SpriteAnimation {
 impl SpriteAnimation {
 
     pub fn new(ctx: &mut Context, image_path: &str) -> Self {
-        let image = graphics::Image::from_path(ctx, Path::new(image_path), true).unwrap();
+        let image = graphics::Image::from_path(&ctx.gfx, Path::new(image_path)).unwrap();
         let image_count = (image.width() / image.height()) as i8;
         Self {
             image: image,

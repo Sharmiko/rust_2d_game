@@ -15,7 +15,7 @@ impl MovingBackground {
 
     pub fn new(_ctx: &mut Context, image_path: &str, step_size: f32) -> Self {
         Self {
-            image: graphics::Image::from_path(_ctx, Path::new(image_path), true).unwrap(),
+            image: graphics::Image::from_path(&_ctx.gfx, Path::new(image_path)).unwrap(),
             step: 0.,
             step_size: step_size,
             forward: true 
@@ -45,7 +45,7 @@ impl MovingBackground {
 
         let src_w = 1. - step as f32;
         let params = graphics::DrawParam::default()
-            .scale([scale_x * src_w, scale_y])
+            .scale([scale_x, scale_y])
             .src(graphics::Rect {
                 x: step as f32 * (if is_forward { 1.0 } else { 0.0 }),
                 y: 0f32,
@@ -60,7 +60,7 @@ impl MovingBackground {
 
         scale_x  = (w * step) / (self.image.width() as f32 * step);
         let params = graphics::DrawParam::default()
-            .scale([scale_x * step, scale_y])
+            .scale([scale_x, scale_y])
             .src(graphics::Rect {
                 x: (1f32 - step) * (if is_forward { 0.0 } else { 1.0 }),
                 y: 0f32,
