@@ -104,12 +104,12 @@ impl Map {
 
                 let image_path = image_path.unwrap().trim_start_matches("../resources");
 
-                let image = Image::from_path(ctx, image_path, true).unwrap();
+                let image = Image::from_path(&ctx.gfx, image_path).unwrap();
                 let image_width = image.width() as f32;
                 // TODO - add support for other types of objects
                 
                 if !instance_arrs.contains_key(image_path) {
-                    instance_arrs.insert(image_path.to_string(), InstanceArray::new(ctx, image, 1, false));
+                    instance_arrs.insert(image_path.to_string(), InstanceArray::new(&ctx.gfx, image, 1));
                 }
 
                 instance_arrs.get_mut(image_path).unwrap().push(DrawParam::default().dest([x, y]));
