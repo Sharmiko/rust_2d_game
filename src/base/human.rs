@@ -17,7 +17,8 @@ pub enum Animation {
     Run,
     Jump,
     DoubleJump,
-    Attack
+    Attack,
+    Walk
 }
 
 
@@ -146,9 +147,9 @@ impl BaseHuman {
             .dest([self.layout.x, self.layout.y]);
             
         if self.state.is_flipped {
-            params = params.scale([-CHAR_SCALE_FACTOR * w, CHAR_SCALE_FACTOR]);
+            params = params.scale([-CHAR_SCALE_FACTOR, CHAR_SCALE_FACTOR]);
         } else {
-            params = params.scale([CHAR_SCALE_FACTOR * w, CHAR_SCALE_FACTOR]);
+            params = params.scale([CHAR_SCALE_FACTOR, CHAR_SCALE_FACTOR]);
         }
 
         return params;
