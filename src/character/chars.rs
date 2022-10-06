@@ -7,6 +7,14 @@ use crate::utils::join_paths;
 use crate::resources::chars;
 
 
+#[derive(Debug, PartialEq, Eq, Hash)]
+pub enum CharacterType {
+    Punk,
+    Biker,
+    Cyborg
+}
+
+
 pub struct Punk;
 
 impl Punk {
@@ -51,5 +59,18 @@ impl Cyborg {
         cyborg.entity.insert_animation(Animation::DoubleJump, SpriteAnimation::new(_ctx, &join_paths(&chars::CYBORG, "Cyborg_doublejump.png")));
 
         return cyborg;
+    }
+}
+
+
+pub struct CharacterFactory;
+
+impl CharacterFactory {
+    pub fn make(ctx: &mut Context, character_type: CharacterType) -> Character{
+        match character_type {
+            CharacterType::Biker => Biker::new(ctx),
+            CharacterType::Punk => Punk::new(ctx),
+            CharacterType::Cyborg => Cyborg::new(ctx)
+        }
     }
 }
