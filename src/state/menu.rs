@@ -42,15 +42,15 @@ impl State for MenuState {
         canvas.draw(&text, draw_params.color(graphics::Color::RED));
     }
 
-    fn update(&mut self, _ctx: &mut Context, current_state: &RefCell<AllStates>) {
-        let point = mouse::position(_ctx);
+    fn update(&mut self, ctx: &mut Context, current_state: &RefCell<AllStates>) {
+        let point = ctx.mouse.position();
         let (mouse_x, mouse_y) = (point.x, point.y);
         if mouse_x > self.rect.fields.x && 
            mouse_x < self.rect.fields.x + self.rect.fields.w &&
            mouse_y > self.rect.fields.y && 
            mouse_y < self.rect.fields.y + self.rect.fields.h
         {
-            if mouse::button_pressed(_ctx, mouse::MouseButton::Left) {
+            if ctx.mouse.button_pressed(mouse::MouseButton::Left) {
                 current_state.replace(AllStates::Play);
             }
         }
