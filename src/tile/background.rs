@@ -1,7 +1,7 @@
 use std::cell::RefCell;
 use std::collections::BTreeMap;
 
-use glam::Vec2;
+use mint::Vector2;
 use ggez::graphics::{self, *};
 use ggez::input::keyboard::KeyCode;
 use ggez::{Context, GameResult};
@@ -42,8 +42,14 @@ impl Background {
             let scale_x = w / image.width() as f32;
             let scale_y = h / image.height() as f32;
             let params = graphics::DrawParam::default()
-                .scale(Vec2::new(scale_x, scale_y))
-                .dest(Vec2::new(0., 0.));
+                .scale(Vector2 {
+                     x: scale_x,
+                     y: scale_y
+                })
+                .dest(Vector2 {
+                    x: 0.,
+                    y: 0.
+                });
             image.draw(canvas, params);
         }
 
@@ -61,7 +67,7 @@ impl ParkBackground {
         let mut static_background = BTreeMap::new();
         static_background.insert(
             "background1".to_string(), 
-            RefCell::new(graphics::Image::from_path(_ctx, &join_paths(background::PARK_DAY_BACKGROUND, "1.png"), true).unwrap())
+            RefCell::new(graphics::Image::from_path(&_ctx.gfx, &join_paths(background::PARK_DAY_BACKGROUND, "1.png")).unwrap())
         );
 
         let mut moving_background = BTreeMap::new();
