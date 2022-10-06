@@ -1,3 +1,4 @@
+use mint::Vector2;
 use ggez::Context;
 use ggez::graphics::Rect;
 use ggez::graphics::{self, *};
@@ -125,7 +126,10 @@ impl QuadTree {
         ).unwrap();
 
         let draw_params = graphics::DrawParam::new()
-            .dest(glam::Vec2::new(self.boundary.x, self.boundary.y));
+            .dest(Vector2 {
+                x: self.boundary.x, 
+                y: self.boundary.y
+            });
 
         canvas.draw(&mesh, draw_params);
 
