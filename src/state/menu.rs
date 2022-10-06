@@ -1,5 +1,6 @@
 use std::cell::RefCell;
 
+use mint::Vector2;
 use ggez::Context;
 use ggez::graphics::{self, Canvas};
 use ggez::input::mouse::{self};
@@ -36,7 +37,10 @@ impl State for MenuState {
     fn draw(&mut self, ctx: &mut Context, canvas: &mut Canvas, _current_state: &RefCell<AllStates>) {
         self.rect.draw(ctx, canvas);
         let draw_params = graphics::DrawParam::new()
-            .dest(glam::Vec2::new(self.rect.fields.x, self.rect.fields.y));
+            .dest(Vector2 {
+                x: self.rect.fields.x, 
+                y: self.rect.fields.y
+            });
 
         let text = graphics::Text::new("Play");
         canvas.draw(&text, draw_params.color(graphics::Color::RED));
