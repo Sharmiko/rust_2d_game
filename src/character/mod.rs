@@ -18,10 +18,10 @@ pub struct Character {
 
 impl Character {
 
-    pub fn default(_ctx: &mut Context) -> Self {
+    pub fn default(_ctx: &mut Context, x: f32, y: f32) -> Self {
         let (w, h) = _ctx.gfx.drawable_size();
         Self {
-            entity: BaseHuman::default(_ctx),
+            entity: BaseHuman::default(x, y),
             quadtree: QuadTree::new(0., 0., w, h)
         }
     }

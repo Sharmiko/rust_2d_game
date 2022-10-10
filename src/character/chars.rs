@@ -18,8 +18,8 @@ pub enum CharacterType {
 pub struct Punk;
 
 impl Punk {
-    pub fn new(_ctx: &mut Context) -> Character {
-        let mut punk = Character::default(_ctx);
+    pub fn new(_ctx: &mut Context, x: f32, y: f32) -> Character {
+        let mut punk = Character::default(_ctx, x, y);
         punk.entity.insert_animation(Animation::Idle, SpriteAnimation::new(_ctx, &join_paths(&chars::PUNK, "Punk_idle.png")));
         punk.entity.insert_animation(Animation::Run, SpriteAnimation::new(_ctx, &join_paths(&chars::PUNK, "Punk_run.png")));
         punk.entity.insert_animation(Animation::Jump,  SpriteAnimation::new(_ctx, &join_paths(&chars::PUNK, "Punk_jump.png")));
@@ -34,8 +34,8 @@ impl Punk {
 pub struct Biker;
 
 impl Biker {
-    pub fn new(_ctx: &mut Context) -> Character {
-        let mut biker = Character::default(_ctx);
+    pub fn new(_ctx: &mut Context, x: f32, y: f32) -> Character {
+        let mut biker = Character::default(_ctx, x, y);
         biker.entity.insert_animation(Animation::Idle, SpriteAnimation::new(_ctx, &join_paths(&chars::BIKER, "Biker_idle.png")));
         biker.entity.insert_animation(Animation::Run, SpriteAnimation::new(_ctx, &join_paths(&chars::BIKER, "Biker_run.png")));
         biker.entity.insert_animation(Animation::Jump,  SpriteAnimation::new(_ctx, &join_paths(&chars::BIKER, "Biker_jump.png")));
@@ -50,8 +50,8 @@ impl Biker {
 pub struct Cyborg;
 
 impl Cyborg {
-    pub fn new(_ctx: &mut Context) -> Character {
-        let mut cyborg = Character::default(_ctx);
+    pub fn new(_ctx: &mut Context, x: f32, y: f32) -> Character {
+        let mut cyborg = Character::default(_ctx, x, y);
         cyborg.entity.insert_animation(Animation::Idle, SpriteAnimation::new(_ctx, &join_paths(&chars::CYBORG, "Cyborg_idle.png")));
         cyborg.entity.insert_animation(Animation::Run, SpriteAnimation::new(_ctx, &join_paths(&chars::CYBORG, "Cyborg_run.png")));
         cyborg.entity.insert_animation(Animation::Jump,  SpriteAnimation::new(_ctx, &join_paths(&chars::CYBORG, "Cyborg_jump.png")));
@@ -66,11 +66,11 @@ impl Cyborg {
 pub struct CharacterFactory;
 
 impl CharacterFactory {
-    pub fn make(ctx: &mut Context, character_type: CharacterType) -> Character{
+    pub fn make(ctx: &mut Context, character_type: CharacterType, x: f32, y: f32) -> Character{
         match character_type {
-            CharacterType::Biker => Biker::new(ctx),
-            CharacterType::Punk => Punk::new(ctx),
-            CharacterType::Cyborg => Cyborg::new(ctx)
+            CharacterType::Biker => Biker::new(ctx, x, y),
+            CharacterType::Punk => Punk::new(ctx, x, y),
+            CharacterType::Cyborg => Cyborg::new(ctx, x, y)
         }
     }
 }

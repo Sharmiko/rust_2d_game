@@ -38,7 +38,7 @@ fn update_quadtree(tree: &mut QuadTree, location: LocationType) {
 impl PlayState {
     pub fn new(ctx: &mut Context) ->  Self {
 
-        let mut player = CharacterFactory::make(ctx, CharacterType::Punk);
+        let mut player = CharacterFactory::make(ctx, CharacterType::Punk, 100., 100.);
 
         let mut grid = Map::new("./levels/level_1.tmx");
         let mut arr: HashMap<String, InstanceArray> = HashMap::new();
@@ -49,7 +49,7 @@ impl PlayState {
 
         Self {
             player: player,
-            enemy: Enemy::new(ctx, 1),
+            enemy: Enemy::new(ctx, 1, 400., 100.),
             background: ParkBackground::new(ctx),
             map: grid,
             instance_arrs: arr

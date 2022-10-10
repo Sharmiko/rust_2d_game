@@ -27,8 +27,8 @@ impl Enemy {
 
     const WALK_RANGE: f32 = 300.;
 
-    pub fn new(_ctx: &mut Context, enemy_number: i8) -> Self {
-        let mut entity = BaseHuman::default(_ctx);
+    pub fn new(_ctx: &mut Context, enemy_number: i8, x: f32, y: f32) -> Self {
+        let mut entity = BaseHuman::default(x, y);
         entity.insert_animation(
             Animation::Idle, 
             SpriteAnimation::new(_ctx, &join_paths(&enemies::DIR, &format!("{}/Idle.png", enemy_number)))
