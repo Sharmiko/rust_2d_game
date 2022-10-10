@@ -1,13 +1,12 @@
 use ggez::Context;
 use ggez::graphics::{Canvas, Rect};
+
 use crate::animation::{SpriteAnimation, HumanAnimation};
 use crate::base::human::{BaseHuman, Animation};
 use crate::base::CustomRect;
 use crate::utils::join_paths;
 use crate::resources::enemies;
-use crate::consts::{
-    CHAR_HEIGHT, WALK_SPEED
-};
+use crate::consts::{CHAR_HEIGHT, WALK_SPEED, DESIRED_FPS};
 use crate::collisions::rect_collision;
 
 
@@ -20,7 +19,8 @@ pub struct Enemy {
     pub fov: FieldOfVision,
     pub player_layout: Rect,
     walk_range_counter: f32,
-    walk_right: bool
+    walk_right: bool,
+    timeout: u32
 }
 
 impl Enemy {
@@ -53,7 +53,8 @@ impl Enemy {
             fov: fov,
             player_layout: Rect::new(0., 0., 0., 0.),
             walk_range_counter: 0.,
-            walk_right: true
+            walk_right: true,
+            timeout: 0
         }
     }
 
@@ -61,6 +62,10 @@ impl Enemy {
         self.entity.draw(ctx, canvas);
         CustomRect::from_rect(self.entity.dyn_layout()).draw(ctx, canvas);
         self.fov.layout.draw(ctx, canvas);
+    }
+
+    fn idle(&mut self, _ctx: &mut Context) {
+        self.entity.idle(_ctx);
     }
 
     fn walk_right(&mut self, _ctx: &mut Context) {
@@ -91,9 +96,17 @@ impl Enemy {
         
         self.walk_range_counter += WALK_SPEED;
         if self.walk_range_counter >= Enemy::WALK_RANGE {
-            self.walk_range_counter = 0.;
-            self.walk_right = !self.walk_right
+            self.timeout += 1;
+            if self.timeout == DESIRED_FPS * 5 {
+                self.timeout = 0;
+                self.walk_range_counter = 0.;
+                self.walk_right = !self.walk_right;
+            } else {
+                self.idle(ctx);
+                return;
+            }
         }
+
 
         if self.walk_right {
             self.entity.layout.x += WALK_SPEED;
