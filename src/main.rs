@@ -6,6 +6,8 @@ use ggez::{Context, ContextBuilder, GameResult};
 use ggez::graphics;
 use ggez::event::{self, EventHandler};
 
+use crate::consts::DESIRED_FPS;
+use state::{StateMachine, State, MenuState, PlayState, AllStates};
 
 mod consts;
 mod state;
@@ -20,7 +22,6 @@ mod resources;
 mod tileset;
 mod enemy;
 
-use state::{StateMachine, State, MenuState, PlayState, AllStates};
 
 
 fn main() {
@@ -72,7 +73,6 @@ impl MyGame {
 
 impl EventHandler for MyGame {
     fn update(&mut self, _ctx: &mut Context) -> GameResult<()> {
-        const DESIRED_FPS: u32 = 10;
         while _ctx.time.check_update_time(DESIRED_FPS) {
             let _dt = 1. / (DESIRED_FPS as f32);
             self.state_machine.update(_ctx);

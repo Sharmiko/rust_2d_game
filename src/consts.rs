@@ -1,3 +1,6 @@
+// Game Configuration
+pub const DESIRED_FPS: u32 = 10;
+
 // Character Animation Configuration
 pub const CHAR_SCALE_FACTOR: f32 = 3.;
 pub const CHAR_WIDTH: f32 = 48. *  CHAR_SCALE_FACTOR;
