@@ -45,7 +45,87 @@ pub struct BaseHuman {
     pub animations: HashMap<Animation, RefCell<SpriteAnimation>>,
     pub layout: graphics::Rect,
     pub state: State,
-    pub current: Animation
+    pub current: Animation,
+    pub health: f32
+}
+
+impl BaseHuman {
+    pub fn default(x: f32, y: f32) -> Self {
+        Self {
+            animations: HashMap::new(),
+            layout: Rect {
+                x: x,
+                y: y,
+                w: CHAR_WIDTH,
+                h: CHAR_HEIGHT,
+            },
+            state: State::default(),
+            current: Animation::Idle,
+            health: 100.
+        }
+    }
+
+    fn draw_health_bar(&self, ctx: &mut Context, canvas: &mut Canvas) {
+        let mesh = graphics::Mesh::new_rectangle(
+            &ctx.gfx, 
+            graphics::DrawMode::fill(),             
+            graphics::Rect {
+                x: 0.,
+                y: 0.,
+                w: self.layout.w / 2.,
+                h: 15.0
+            },
+            graphics::Color::RED
+        ).unwrap();
+
+        let draw_params = graphics::DrawParam::new()
+            .dest([self.layout.x, self.layout.y + 10.]);
+        canvas.draw(&mesh, draw_params);
+    }
+
+    pub fn dyn_layout(&self) -> Rect {
+        let x = match self.state.is_flipped {
+            true => self.layout.x - self.layout.w + CHAR_WIDTH / 4.,
+            false => self.layout.x - self.layout.w / 4.
+        };
+
+        Rect {
+            x: x,
+            y: self.layout.y,
+            w: self.layout.w,
+            h: self.layout.h
+        }
+    }
+
+    pub fn insert_animation(&mut self, animation: Animation, sprite: SpriteAnimation) {
+        self.animations.insert(animation, RefCell::new(sprite));
+    }
+    
+    pub fn param(&self, src_x: f32, w: f32) -> graphics::DrawParam{
+        let mut params = graphics::DrawParam::default()
+            .src(graphics::Rect {
+                x: src_x,
+                y: 0f32,
+                w: w,
+                h: 1f32
+            })
+            .dest([self.layout.x, self.layout.y]);
+            
+        if self.state.is_flipped {
+            params = params.scale([-CHAR_SCALE_FACTOR, CHAR_SCALE_FACTOR]);
+        } else {
+            params = params.scale([CHAR_SCALE_FACTOR, CHAR_SCALE_FACTOR]);
+        }
+
+        return params;
+    }
+
+    pub fn draw(&mut self, ctx: &mut Context, canvas: &mut Canvas)  {
+        let current_anim = self.animations.get(&self.current).unwrap().borrow_mut();
+        let params = self.param(current_anim.src_x, current_anim.image_width);
+        canvas.draw(&current_anim.image, params);
+        self.draw_health_bar(ctx, canvas);
+    }
 }
 
 impl HumanAnimation for BaseHuman {
@@ -99,65 +179,5 @@ impl HumanAnimation for BaseHuman {
     fn perform_attack(&mut self, _ctx: &mut Context) {
         self.update_current_anim(Animation::Attack);
         self.perform_action(self.animations.get(&self.current).unwrap().borrow_mut());
-    }
-}
-
-
-impl BaseHuman {
-    pub fn default(_ctx: &mut Context) -> Self {
-        Self {
-            animations: HashMap::new(),
-            layout: Rect {
-                x: 100.,
-                y: 100.,
-                w: CHAR_WIDTH,
-                h: CHAR_HEIGHT,
-            },
-            state: State::default(),
-            current: Animation::Idle,
-        }
-    }
-
-    pub fn dyn_layout(&self) -> Rect {
-        let x = match self.state.is_flipped {
-            true => self.layout.x - self.layout.w + CHAR_WIDTH / 4.,
-            false => self.layout.x - self.layout.w / 4.
-        };
-
-        Rect {
-            x: x,
-            y: self.layout.y,
-            w: self.layout.w,
-            h: self.layout.h
-        }
-    }
-
-    pub fn insert_animation(&mut self, animation: Animation, sprite: SpriteAnimation) {
-        self.animations.insert(animation, RefCell::new(sprite));
-    }
-    
-    pub fn param(&self, src_x: f32, w: f32) -> graphics::DrawParam{
-        let mut params = graphics::DrawParam::default()
-            .src(graphics::Rect {
-                x: src_x,
-                y: 0f32,
-                w: w,
-                h: 1f32
-            })
-            .dest([self.layout.x, self.layout.y]);
-            
-        if self.state.is_flipped {
-            params = params.scale([-CHAR_SCALE_FACTOR, CHAR_SCALE_FACTOR]);
-        } else {
-            params = params.scale([CHAR_SCALE_FACTOR, CHAR_SCALE_FACTOR]);
-        }
-
-        return params;
-    }
-
-    pub fn draw(&mut self, ctx: &mut Context, canvas: &mut Canvas)  {
-        let current_anim = self.animations.get(&self.current).unwrap().borrow_mut();
-        let params = self.param(current_anim.src_x, current_anim.image_width);
-        canvas.draw(&current_anim.image, params);
     }
 }
