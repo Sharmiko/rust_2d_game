@@ -92,7 +92,7 @@ impl Enemy {
             println!("fov entered");
         }
 
-        self.fov.update(&self.entity.layout);
+        self.fov.update(&self.entity.layout, self.entity.state.is_flipped);
         
         self.walk_range_counter += WALK_SPEED;
         if self.walk_range_counter >= Enemy::WALK_RANGE {

@@ -29,9 +29,9 @@ impl FieldOfVision {
         }
     }
 
-    pub fn update(&mut self, entity_layout: &Rect) {
+    pub fn update(&mut self, entity_layout: &Rect, is_flipped: bool) {
         self.layout = CustomRect::new(
-            entity_layout.x - self.horizontal,
+            entity_layout.x - self.horizontal - (if is_flipped { CHAR_WIDTH / 2. } else { 0. }),
             entity_layout.y - CHAR_HEIGHT / 2. - self.vertical / 2.,
             self.horizontal * 2. + CHAR_WIDTH / 2.,
             self.vertical * 2.
